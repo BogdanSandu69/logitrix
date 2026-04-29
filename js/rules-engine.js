@@ -29,7 +29,7 @@ class RulesEngine {
             row: r,
             letter,
             count,
-            description: `Row ${r + 1} has exactly ${count} ${letter}${count > 1 ? "'s" : ''}`
+            description: `Row ${r + 1} has exactly ${count} ${letter}${count > 1 ? 's' : ''}`
           });
         }
       }
@@ -43,7 +43,7 @@ class RulesEngine {
             col: c,
             letter,
             count,
-            description: `Column ${c + 1} has exactly ${count} ${letter}${count > 1 ? "'s" : ''}`
+            description: `Column ${c + 1} has exactly ${count} ${letter}${count > 1 ? 's' : ''}`
           });
         }
       }
@@ -115,7 +115,7 @@ class RulesEngine {
             between: left,
             row: r,
             col: c,
-            description: `In row ${r + 1}, ${mid} is sandwiched between two ${left}'s`
+            description: `In row ${r + 1}, ${mid} is sandwiched between two ${left}s`
           });
         }
       }
