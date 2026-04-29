@@ -379,12 +379,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('premium-modal').addEventListener('click', e => {
     if (e.target === e.currentTarget) hidePremiumModal();
   });
-  document.getElementById('unlock-btn').addEventListener('click', async () => {
-    // Replace this with a real payment integration (e.g. Stripe) when ready
-    await unlockPremium();
-    hidePremiumModal();
-    renderMenu();
-    selectDifficulty('insane');
+  document.getElementById('unlock-btn').addEventListener('click', () => {
+    // Payment coming soon — button is disabled, this handler is a no-op
   });
 
   const playBtn = document.getElementById('play-btn');
