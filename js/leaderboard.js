@@ -99,14 +99,16 @@ function renderLeaderboardEntries(entries, difficulty) {
     const rankClass = rank <= 3 ? `lb-rank-top lb-rank-${rank}` : 'lb-rank-normal';
     const rowClass  = isMe ? 'lb-row lb-row-me' : 'lb-row';
 
-    const avatarHtml = entry.photoURL
-      ? `<img src="${entry.photoURL}" class="lb-avatar" alt="" loading="lazy">`
+    // Validate photoURL: only allow http/https URLs from trusted domains
+    const safePhotoURL = isSafeImageUrl(entry.photoURL) ? escapeHtml(entry.photoURL) : '';
+    const avatarHtml = safePhotoURL
+      ? `<img src="${safePhotoURL}" class="lb-avatar" alt="" loading="lazy">`
       : `<div class="lb-avatar lb-avatar-default">👤</div>`;
 
     const rankBadge = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
 
     list.insertAdjacentHTML('beforeend', `
-      <div class="${rowClass}" data-userid="${entry.userId}">
+      <div class="${rowClass}" data-userid="${escapeHtml(entry.userId)}">
         <span class="lb-rank ${rankClass}">${rankBadge}</span>
         ${avatarHtml}
         <span class="lb-name">${escapeHtml(entry.displayName || 'Anonymous')}${isMe ? ' <span class="lb-you-badge">YOU</span>' : ''}</span>
@@ -134,6 +136,22 @@ function renderUserRank(entries, difficulty) {
     rankInfo.innerHTML = pb != null
       ? `<span>You are outside the top ${LB_TOP_N}. Your best: <strong>${lbFormatTime(pb)}</strong></span>`
       : `<span>You haven't completed <strong>${LB_LABELS[difficulty]}</strong> yet.</span>`;
+  }
+}
+
+// ── URL safety helper ─────────────────────────────────────────────────────────
+
+/**
+ * Returns true only for http/https URLs, blocking javascript: and data: schemes
+ * that could be used for XSS via an img src attribute.
+ */
+function isSafeImageUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
   }
 }
 
