@@ -23,38 +23,61 @@ function loadRecords() {
   }
 }
 
+// ── Premium helpers ────────────────────────────────────────────────────────
+
+// Premium is cached in localStorage keyed by UID (or 'anon') for sync reads.
+// The source of truth for logged-in users is Firestore.
+function premiumKey() {
+  const user = window.auth && window.auth.currentUser;
+  return user ? `logitrix_premium_${user.uid}` : 'logitrix_premium';
+}
+
 function isPremiumUnlocked() {
-  return localStorage.getItem('logitrix_premium') === 'true';
+  return localStorage.getItem(premiumKey()) === 'true';
 }
 
-function getAuthUser() {
+async function unlockPremium() {
+  localStorage.setItem(premiumKey(), 'true');
+  const user = window.auth && window.auth.currentUser;
+  if (user && window.db) {
+    try {
+      await window.db.collection('users').doc(user.uid).set({ premium: true }, { merge: true });
+    } catch (e) {
+      console.warn('Could not save premium to Firestore:', e);
+    }
+  }
+}
+
+async function syncPremiumFromFirestore(uid) {
+  if (!window.db) return;
   try {
-    return JSON.parse(localStorage.getItem('logitrix_user') || 'null');
-  } catch {
-    return null;
+    const doc = await window.db.collection('users').doc(uid).get();
+    if (doc.exists && doc.data().premium === true) {
+      localStorage.setItem(`logitrix_premium_${uid}`, 'true');
+    }
+  } catch (e) {
+    console.warn('Could not fetch premium status from Firestore:', e);
   }
 }
 
-function setAuthUser(user) {
-  if (user) {
-    localStorage.setItem('logitrix_user', JSON.stringify(user));
-  } else {
-    localStorage.removeItem('logitrix_user');
-  }
-}
+// ── Auth state rendering ───────────────────────────────────────────────────
 
 function renderAuthState() {
-  const user = getAuthUser();
   const loginBtn = document.getElementById('login-btn');
   const userInfo = document.getElementById('user-info');
   if (!loginBtn || !userInfo) return;
 
+  const user = window.auth && window.auth.currentUser;
   if (user) {
     loginBtn.classList.add('hidden');
     userInfo.classList.remove('hidden');
+    const name = user.displayName || user.email || 'Player';
+    const avatarHtml = user.photoURL
+      ? `<img src="${user.photoURL}" class="user-avatar-img" alt="">`
+      : `<span class="user-avatar">👤</span>`;
     userInfo.innerHTML = `
-      <span class="user-avatar">${user.avatar || '👤'}</span>
-      <span class="user-name">${user.name}</span>
+      ${avatarHtml}
+      <span class="user-name">${name}</span>
       <button id="logout-btn" class="logout-btn">Sign Out</button>
     `;
   } else {
@@ -62,6 +85,8 @@ function renderAuthState() {
     userInfo.classList.add('hidden');
   }
 }
+
+// ── Menu rendering ─────────────────────────────────────────────────────────
 
 function renderMenu() {
   const records = loadRecords();
@@ -128,37 +153,71 @@ function showLoginModal() {
 
 function hideLoginModal() {
   document.getElementById('login-modal').classList.add('hidden');
+  hideAuthError();
 }
 
-const SOCIAL_PROVIDERS = [
-  { id: 'google',    label: 'Google',    avatar: '🔵' },
-  { id: 'facebook',  label: 'Facebook',  avatar: '💙' },
-  { id: 'steam',     label: 'Steam',     avatar: '🎮' },
-  { id: 'instagram', label: 'Instagram', avatar: '📸' },
-  { id: 'x',         label: 'X',         avatar: '🐦' }
-];
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
 
-function socialLogin(provider) {
-  const user = { provider: provider.id, name: `${provider.label} User`, avatar: provider.avatar };
-  setAuthUser(user);
-  renderAuthState();
-  hideLoginModal();
+function hideAuthError() {
+  const el = document.getElementById('auth-error');
+  if (el) el.classList.add('hidden');
+}
+
+async function handleSignIn(providerFactory, providerLabel) {
+  hideAuthError();
+  if (!window.auth || typeof firebase === 'undefined') {
+    showAuthError('Firebase is not configured. See js/firebase-config.js for setup instructions.');
+    return;
+  }
+  try {
+    const result = await window.auth.signInWithPopup(providerFactory());
+    await syncPremiumFromFirestore(result.user.uid);
+    hideLoginModal();
+    renderAuthState();
+    renderMenu();
+    selectDifficulty(selectedDifficulty);
+  } catch (err) {
+    if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+      showAuthError(`${providerLabel} sign-in failed: ${err.message}`);
+    }
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   renderMenu();
   selectDifficulty('easy');
-  renderAuthState();
+
+  // Firebase auth state observer: fires on load and on every sign-in/out
+  if (window.auth) {
+    window.auth.onAuthStateChanged(async user => {
+      if (user) {
+        await syncPremiumFromFirestore(user.uid);
+      }
+      renderAuthState();
+      renderMenu();
+      selectDifficulty(selectedDifficulty);
+    });
+  } else {
+    renderAuthState();
+  }
 
   // Login button
   const loginBtn = document.getElementById('login-btn');
   if (loginBtn) loginBtn.addEventListener('click', showLoginModal);
 
-  // Use event delegation on user-info to handle logout (avoids duplicate listeners)
+  // Logout (event delegation on user-info)
   document.getElementById('user-info').addEventListener('click', e => {
-    if (e.target.id === 'logout-btn') {
-      setAuthUser(null);
-      renderAuthState();
+    if (e.target.id === 'logout-btn' && window.auth) {
+      window.auth.signOut().then(() => {
+        renderAuthState();
+        renderMenu();
+        selectDifficulty('easy');
+      });
     }
   });
 
@@ -169,9 +228,26 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Social login buttons
-  SOCIAL_PROVIDERS.forEach(p => {
-    const btn = document.getElementById(`login-${p.id}`);
-    if (btn) btn.addEventListener('click', () => socialLogin(p));
+  document.getElementById('login-google').addEventListener('click', () => {
+    handleSignIn(() => new firebase.auth.GoogleAuthProvider(), 'Google');
+  });
+
+  document.getElementById('login-facebook').addEventListener('click', () => {
+    handleSignIn(() => new firebase.auth.FacebookAuthProvider(), 'Facebook');
+  });
+
+  // Instagram auth goes through Facebook/Meta
+  document.getElementById('login-instagram').addEventListener('click', () => {
+    handleSignIn(() => new firebase.auth.FacebookAuthProvider(), 'Facebook/Instagram');
+  });
+
+  document.getElementById('login-x').addEventListener('click', () => {
+    handleSignIn(() => new firebase.auth.TwitterAuthProvider(), 'X');
+  });
+
+  // Steam requires server-side OAuth and is not available in-browser
+  document.getElementById('login-steam').addEventListener('click', () => {
+    showAuthError('Steam login requires a server setup and is not yet supported.');
   });
 
   // Premium modal
@@ -180,9 +256,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('premium-modal').addEventListener('click', e => {
     if (e.target === e.currentTarget) hidePremiumModal();
   });
-  document.getElementById('unlock-btn').addEventListener('click', () => {
-    // Simulate payment
-    localStorage.setItem('logitrix_premium', 'true');
+  document.getElementById('unlock-btn').addEventListener('click', async () => {
+    // Replace this with a real payment integration (e.g. Stripe) when ready
+    await unlockPremium();
     hidePremiumModal();
     renderMenu();
     selectDifficulty('insane');
