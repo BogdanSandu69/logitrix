@@ -366,6 +366,12 @@ function init() {
       selectLetter(letters[num - 1]);
       return;
     }
+    // Letter key shortcut: pressing the actual letter selects it
+    const keyUpper = e.key.toUpperCase();
+    if (/^[A-Z]$/.test(keyUpper) && letters.includes(keyUpper)) {
+      selectLetter(keyUpper);
+      return;
+    }
     if (e.key === 'Escape') {
       deselectLetter();
     }

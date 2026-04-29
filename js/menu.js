@@ -194,6 +194,25 @@ function selectDifficulty(diff) {
 }
 
 function startGame() {
+  const user = window.auth && window.auth.currentUser;
+  if (!user) {
+    showPlayPromptModal();
+  } else {
+    navigateToGame();
+  }
+}
+
+// ── Play Prompt Modal ──────────────────────────────────────────────────────
+function showPlayPromptModal() {
+  document.getElementById('play-prompt-modal').classList.remove('hidden');
+  document.getElementById('play-prompt-auth-error').classList.add('hidden');
+}
+
+function hidePlayPromptModal() {
+  document.getElementById('play-prompt-modal').classList.add('hidden');
+}
+
+function navigateToGame() {
   window.location.href = `game.html?difficulty=${selectedDifficulty}`;
 }
 
@@ -372,6 +391,41 @@ document.addEventListener('DOMContentLoaded', () => {
   if (playBtn) {
     playBtn.addEventListener('click', startGame);
   }
+
+  // Play-prompt modal
+  document.getElementById('close-play-prompt').addEventListener('click', hidePlayPromptModal);
+  document.getElementById('play-prompt-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) hidePlayPromptModal();
+  });
+  document.getElementById('play-prompt-skip').addEventListener('click', () => {
+    hidePlayPromptModal();
+    navigateToGame();
+  });
+  document.getElementById('play-prompt-google').addEventListener('click', async () => {
+    const errEl = document.getElementById('play-prompt-auth-error');
+    errEl.classList.add('hidden');
+    if (!window.auth || typeof firebase === 'undefined') {
+      errEl.textContent = 'Firebase is not configured. See js/firebase-config.js for setup instructions.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await window.auth.signInWithPopup(provider);
+      hidePlayPromptModal();
+      navigateToGame();
+    } catch (err) {
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        // user closed popup — stay on modal
+      } else if (err.code === 'auth/popup-blocked') {
+        errEl.textContent = 'Pop-up blocked by browser. Please allow pop-ups for this site and try again.';
+        errEl.classList.remove('hidden');
+      } else {
+        errEl.textContent = `Sign-in failed: ${err.message}`;
+        errEl.classList.remove('hidden');
+      }
+    }
+  });
 
   const leaderboardBtn = document.getElementById('leaderboard-btn');
   if (leaderboardBtn) {
