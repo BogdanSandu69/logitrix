@@ -136,12 +136,41 @@ body > * { position: relative; z-index: 1; }
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
   white-space: nowrap;
+  position: relative;
 }
 
 #hint-btn:hover {
   color: #f59e0b;
   border-color: #f59e0b;
   background: rgba(245, 158, 11, 0.08);
+}
+
+/* Tooltip */
+#hint-btn::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  width: 230px;
+  background: rgba(10, 10, 35, 0.97);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: var(--text-primary);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.5;
+  white-space: normal;
+  padding: 0.55rem 0.8rem;
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 20;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+#hint-btn:hover::after {
+  opacity: 1;
 }
 
 /* ── Main Layout ────────────────────────────────────────────────────────── */
@@ -215,15 +244,20 @@ body > * { position: relative; z-index: 1; }
   box-shadow: 0 0 16px currentColor;
 }
 
-/* Hint highlight */
-.grid-cell.hint-highlight {
-  animation: hintPulse 0.6s ease-in-out infinite;
+/* Hint-locked cell — permanently placed by a hint */
+.grid-cell.hint-locked {
   border-color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.08) !important;
+  cursor: not-allowed !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
 }
 
-@keyframes hintPulse {
-  0%, 100% { box-shadow: 0 0 8px #f59e0b, 0 0 20px rgba(245,158,11,0.3); }
-  50%       { box-shadow: 0 0 20px #f59e0b, 0 0 40px rgba(245,158,11,0.5); }
+.grid-cell.hint-locked:hover {
+  transform: none !important;
+  filter: none !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.25) !important;
+  border-color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.08) !important;
 }
 
 /* ── Rules Panel ────────────────────────────────────────────────────────── */
