@@ -11,7 +11,7 @@
   --text-secondary: rgba(255, 255, 255, 0.5);
   --accent-cyan:   #00d4ff;
   --accent-purple: #7c3aed;
-  --cell-size:     72px;
+  --cell-size:     90px;
   --cell-gap:      8px;
 }
 
@@ -239,7 +239,7 @@ body > * { position: relative; z-index: 1; }
 
 .rules-header {
   font-family: 'Orbitron', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.25em;
   color: var(--accent-cyan);
@@ -292,7 +292,7 @@ body > * { position: relative; z-index: 1; }
 .rule-item.satisfied .rule-icon { color: #10b981; }
 
 .rule-text {
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   color: var(--text-secondary);
   line-height: 1.5;
   transition: color 0.2s;
@@ -513,21 +513,27 @@ body > * { position: relative; z-index: 1; }
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 700px) {
-  :root { --cell-size: 56px; --cell-gap: 6px; }
-
-  .rules-panel {
-    display: none; /* hidden on small screens, rules accessible via toggle */
-  }
+  :root { --cell-size: 64px; --cell-gap: 6px; }
 
   .game-main { flex-direction: column; overflow-y: auto; }
 
-  .grid-section { padding: 1rem; }
+  .grid-section { padding: 1rem; flex: 0 0 auto; }
+
+  .rules-panel {
+    width: 100%;
+    min-width: unset;
+    max-width: none;
+    max-height: 220px;
+    border-left: none;
+    border-top: 1px solid var(--border-card);
+    flex-shrink: 0;
+  }
 
   .letter-btn { width: 52px; height: 52px; font-size: 1.2rem; }
 }
 
 @media (max-width: 480px) {
-  :root { --cell-size: 46px; --cell-gap: 5px; }
+  :root { --cell-size: 54px; --cell-gap: 5px; }
 }
 
 /* ── Scrollbar ──────────────────────────────────────────────────────────── */
