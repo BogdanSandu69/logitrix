@@ -1,17 +1,32 @@
 /* puzzle-generator.js — Generates a solved grid and derives rules from it */
 
+// Full pool of available letters (excludes easily-confused pairs like I/l, O/0)
+const LETTER_POOL = [
+  'A','B','C','D','E','F','G','H','J','K',
+  'M','N','P','Q','R','S','T','V','W','X','Y','Z'
+];
+
+function pickRandomLetters(count) {
+  const pool = LETTER_POOL.slice();
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, count);
+}
+
 class PuzzleGenerator {
   constructor(difficulty) {
     this.difficulty = difficulty;
     const configs = {
-      easy:      { size: 3, letters: ['A', 'B', 'C'] },
-      hard:      { size: 4, letters: ['A', 'B', 'C', 'D'] },
-      insane:    { size: 5, letters: ['A', 'B', 'C', 'D', 'E'] },
-      legendary: { size: 6, letters: ['A', 'B', 'C', 'D', 'E', 'F'] }
+      easy:      { size: 3, count: 3 },
+      hard:      { size: 4, count: 4 },
+      insane:    { size: 5, count: 5 },
+      legendary: { size: 6, count: 6 }
     };
-    this.config  = configs[difficulty] || configs.easy;
-    this.size    = this.config.size;
-    this.letters = this.config.letters;
+    const cfg    = configs[difficulty] || configs.easy;
+    this.size    = cfg.size;
+    this.letters = pickRandomLetters(cfg.count);
   }
 
   generate() {
