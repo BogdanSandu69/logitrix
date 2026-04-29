@@ -41,7 +41,7 @@ async function unlockPremium() {
   const user = window.auth && window.auth.currentUser;
   if (user && window.db) {
     try {
-      await window.db.collection('users').doc(user.uid).set({ premium: true }, { merge: true });
+      await window.db.collection('users').doc(user.uid).set({ isPremium: true }, { merge: true });
     } catch (e) {
       console.warn('Could not save premium to Firestore:', e);
     }
@@ -52,7 +52,7 @@ async function syncPremiumFromFirestore(uid) {
   if (!window.db) return;
   try {
     const doc = await window.db.collection('users').doc(uid).get();
-    if (doc.exists && doc.data().premium === true) {
+    if (doc.exists && doc.data().isPremium === true) {
       localStorage.setItem(`logitrix_premium_${uid}`, 'true');
     }
   } catch (e) {
@@ -71,6 +71,30 @@ async function syncOnSignIn(user) {
     // localStorage so the newly-synced best times are visible at once.
     renderMenu();
     selectDifficulty(selectedDifficulty);
+  } else {
+    // If cloudSave.js isn't loaded, manually sync records
+    await syncRecordsToFirestore(user.uid);
+  }
+}
+
+async function syncRecordsToFirestore(uid) {
+  if (!window.db) return;
+  try {
+    const records = JSON.parse(localStorage.getItem('logitrix_records') || '{}');
+    const firestoreData = {};
+
+    // Only include times that exist (not null/undefined)
+    if (records.easy != null) firestoreData.easy = records.easy;
+    if (records.hard != null) firestoreData.hard = records.hard;
+    if (records.insane != null) firestoreData.insane = records.insane;
+    if (records.legendary != null) firestoreData.legendary = records.legendary;
+
+    if (Object.keys(firestoreData).length > 0) {
+      await window.db.collection('users').doc(uid).set(firestoreData, { merge: true });
+      console.log('[sync] Best times saved to Firestore:', firestoreData);
+    }
+  } catch (e) {
+    console.warn('Could not sync records to Firestore:', e);
   }
 }
 

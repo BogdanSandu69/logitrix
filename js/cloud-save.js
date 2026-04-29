@@ -31,7 +31,12 @@ async function loadCloudRecords(uid) {
   try {
     const doc = await window.db.collection('users').doc(uid).get();
     if (doc.exists) {
-      return doc.data().records || {};
+      const data = doc.data();
+      const records = {};
+      for (const d of ['easy', 'hard', 'insane', 'legendary']) {
+        if (data[d] != null) records[d] = data[d];
+      }
+      return records;
     }
   } catch (e) {
     console.warn('[cloud-save] Could not load cloud records:', e);
@@ -45,20 +50,20 @@ async function loadCloudRecords(uid) {
  */
 async function saveCloudRecord(uid, difficulty, secs) {
   if (!window.db || !uid) return false;
+  if (!['easy', 'hard', 'insane', 'legendary'].includes(difficulty)) return false;
   try {
     const userRef = window.db.collection('users').doc(uid);
     const doc     = await userRef.get();
-    const records = (doc.exists && doc.data().records) || {};
+    const existing = doc.exists ? (doc.data()[difficulty] ?? null) : null;
 
-    if (records[difficulty] != null && secs >= records[difficulty]) {
+    if (existing != null && secs >= existing) {
       return false; // not a new cloud record
     }
 
     await userRef.set({
-      [`records.${difficulty}`]:   secs,
-      totalGamesPlayed:            firebase.firestore.FieldValue.increment(1),
-      lastPlayed:                  firebase.firestore.FieldValue.serverTimestamp()
-    }, { mergeFields: [`records.${difficulty}`, 'totalGamesPlayed', 'lastPlayed'] });
+      [difficulty]:   secs,
+      lastPlayed:     firebase.firestore.FieldValue.serverTimestamp()
+    }, { mergeFields: [difficulty, 'lastPlayed'] });
 
     console.log(`[cloud-save] New cloud record saved — ${difficulty}: ${secs}s`);
     return true;
@@ -101,12 +106,12 @@ async function mergeAndSyncRecords(uid) {
     const updates = {};
     for (const d of diffs) {
       if (merged[d] != null && (cloud[d] == null || merged[d] < cloud[d])) {
-        updates[`records.${d}`] = merged[d];
+        updates[d] = merged[d];
       }
     }
     if (Object.keys(updates).length > 0) {
       try {
-        await window.db.collection('users').doc(uid).set(updates, { mergeFields: Object.keys(updates) });
+        await window.db.collection('users').doc(uid).set(updates, { merge: true });
       } catch (e) {
         console.warn('[cloud-save] Could not push merged records to Firestore:', e);
       }
