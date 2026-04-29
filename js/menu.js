@@ -60,8 +60,30 @@ async function syncPremiumFromFirestore(uid) {
   }
 }
 
+async function initializeUserDocument(uid) {
+  if (!window.db) return;
+  try {
+    const docRef = window.db.collection('users').doc(uid);
+    const doc = await docRef.get();
+    if (!doc.exists) {
+      await docRef.set({
+        isPremium: false,
+        easy: null,
+        hard: null,
+        insane: null,
+        legendary: null,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      console.log('[sync] User document initialized with null times');
+    }
+  } catch (e) {
+    console.warn('Could not initialize user document:', e);
+  }
+}
+
 async function syncOnSignIn(user) {
   if (!user) return;
+  await initializeUserDocument(user.uid);
   await syncPremiumFromFirestore(user.uid);
   // Save / update the user's profile and merge cloud records with local
   if (window.cloudSave) {
@@ -83,11 +105,11 @@ async function syncRecordsToFirestore(uid) {
     const records = JSON.parse(localStorage.getItem('logitrix_records') || '{}');
     const firestoreData = {};
 
-    // Only include times that exist (not null/undefined)
-    if (records.easy != null) firestoreData.easy = records.easy;
-    if (records.hard != null) firestoreData.hard = records.hard;
-    if (records.insane != null) firestoreData.insane = records.insane;
-    if (records.legendary != null) firestoreData.legendary = records.legendary;
+    // Only include times that exist and are valid (not null/undefined/0)
+    if (records.easy != null && records.easy > 0) firestoreData.easy = records.easy;
+    if (records.hard != null && records.hard > 0) firestoreData.hard = records.hard;
+    if (records.insane != null && records.insane > 0) firestoreData.insane = records.insane;
+    if (records.legendary != null && records.legendary > 0) firestoreData.legendary = records.legendary;
 
     if (Object.keys(firestoreData).length > 0) {
       await window.db.collection('users').doc(uid).set(firestoreData, { merge: true });

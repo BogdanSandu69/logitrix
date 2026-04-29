@@ -34,7 +34,8 @@ async function loadCloudRecords(uid) {
       const data = doc.data();
       const records = {};
       for (const d of ['easy', 'hard', 'insane', 'legendary']) {
-        if (data[d] != null) records[d] = data[d];
+        // Treat 0 the same as null — it means "never played"
+        if (data[d] != null && data[d] > 0) records[d] = data[d];
       }
       return records;
     }
@@ -54,7 +55,9 @@ async function saveCloudRecord(uid, difficulty, secs) {
   try {
     const userRef = window.db.collection('users').doc(uid);
     const doc     = await userRef.get();
-    const existing = doc.exists ? (doc.data()[difficulty] ?? null) : null;
+    const raw      = doc.exists ? (doc.data()[difficulty] ?? null) : null;
+    // Treat 0 the same as null — it means "never played"
+    const existing = (raw != null && raw > 0) ? raw : null;
 
     if (existing != null && secs >= existing) {
       return false; // not a new cloud record
@@ -91,7 +94,8 @@ async function mergeAndSyncRecords(uid) {
   const diffs   = ['easy', 'hard', 'insane', 'legendary'];
 
   for (const d of diffs) {
-    const l = local[d];
+    // Treat 0 the same as null — it means "never played"
+    const l = (local[d] != null && local[d] > 0) ? local[d] : null;
     const c = cloud[d];
     if (l != null && c != null) merged[d] = Math.min(l, c);
     else if (l != null)          merged[d] = l;
