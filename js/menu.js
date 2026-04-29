@@ -202,12 +202,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const ready = window.authReady || Promise.resolve();
     ready.then(() => {
       window.auth.onAuthStateChanged(async user => {
-        if (user) {
-          await syncOnSignIn(user);
-        }
+        // Update the UI immediately so the user sees their logged-in state
+        // without waiting for the Firestore sync to complete.
         renderAuthState();
         renderMenu();
         selectDifficulty(selectedDifficulty);
+        if (user) {
+          await syncOnSignIn(user);
+          // Re-render after sync so records and premium status are up-to-date.
+          renderMenu();
+          selectDifficulty(selectedDifficulty);
+        }
       });
 
       // Handle the result (or error) from a signInWithRedirect flow.
