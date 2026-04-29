@@ -12,6 +12,7 @@ const LETTER_COLORS = {
 // ── State ──────────────────────────────────────────────────────────────────
 let grid           = [];
 let solution       = [];
+let hintCells      = [];   // tracks cells locked by hints
 let letters        = [];
 let rules          = [];
 let size           = 3;
@@ -19,7 +20,6 @@ let selectedLetter = null;
 let timerInterval  = null;
 let seconds        = 0;
 let hintsUsed      = 0;
-let hintTimeout    = null;
 let difficulty     = 'easy';
 let engine         = null;
 let gameWon        = false;
@@ -80,10 +80,11 @@ function renderGrid() {
 function updateCell(r, c) {
   const cell   = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
   const letter = grid[r][c];
+  const locked = hintCells[r] && hintCells[r][c];
   cell.textContent = letter || '';
   cell.style.color = letter ? LETTER_COLORS[letter] : '';
   cell.classList.toggle('occupied', !!letter);
-  cell.classList.remove('hint-highlight');
+  cell.classList.toggle('hint-locked', !!locked);
 }
 
 function refreshAllCells() {
@@ -128,6 +129,7 @@ function deselectLetter() {
 function handleCellClick(r, c) {
   if (gameWon) return;
   if (!selectedLetter) return;
+  if (hintCells[r] && hintCells[r][c]) return;  // locked by hint — cannot change
 
   if (grid[r][c] === selectedLetter) {
     grid[r][c] = null; // toggle off same letter
@@ -172,27 +174,31 @@ function checkRules() {
 
 // ── Hint ───────────────────────────────────────────────────────────────────
 function showHint() {
-  if (hintTimeout || gameWon) return;
+  if (gameWon) return;
 
-  const wrongCells = [];
+  // Find cells that are not yet correct and not already locked by a hint
+  const candidateCells = [];
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
-      if (grid[r][c] !== solution[r][c]) {
-        wrongCells.push({ r, c });
+      if (!hintCells[r][c] && grid[r][c] !== solution[r][c]) {
+        candidateCells.push({ r, c });
       }
     }
   }
-  if (wrongCells.length === 0) return;
+  if (candidateCells.length === 0) return;
 
-  const pick = wrongCells[Math.floor(Math.random() * wrongCells.length)];
-  const cell = document.querySelector(`[data-row="${pick.r}"][data-col="${pick.c}"]`);
-  cell.classList.add('hint-highlight');
+  // Pick one at random, place the correct letter, and lock it
+  const pick = candidateCells[Math.floor(Math.random() * candidateCells.length)];
+  grid[pick.r][pick.c]     = solution[pick.r][pick.c];
+  hintCells[pick.r][pick.c] = true;
   hintsUsed++;
 
-  hintTimeout = setTimeout(() => {
-    cell.classList.remove('hint-highlight');
-    hintTimeout = null;
-  }, 3000);
+  // Add 30-second penalty to the timer
+  seconds += 30;
+  document.getElementById('timer').textContent = formatTime(seconds);
+
+  updateCell(pick.r, pick.c);
+  checkRules();
 }
 
 // ── Share ──────────────────────────────────────────────────────────────────
@@ -336,7 +342,8 @@ function init() {
   engine = new RulesEngine(solution, letters);
   rules  = engine.generateRules();
 
-  grid = Array.from({ length: size }, () => Array(size).fill(null));
+  grid      = Array.from({ length: size }, () => Array(size).fill(null));
+  hintCells = Array.from({ length: size }, () => Array(size).fill(false));
 
   renderGrid();
   renderLetters();
