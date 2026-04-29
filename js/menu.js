@@ -184,16 +184,20 @@ function hideAuthError() {
 
 async function handleSignIn(providerFactory, providerLabel) {
   hideAuthError();
+  console.log('[auth] Initiating sign-in with:', providerLabel);
   if (!window.auth || typeof firebase === 'undefined') {
     showAuthError('Firebase is not configured. See js/firebase-config.js for setup instructions.');
     return;
   }
   try {
+    console.log('[auth] Calling signInWithRedirect...');
     // Use redirect instead of popup to avoid COOP errors
     await window.auth.signInWithRedirect(providerFactory());
+    console.log('[auth] signInWithRedirect() returned (redirect will happen now)');
     // User will be redirected to Google, then back to this page.
     // The result is handled in getRedirectResult() below.
   } catch (err) {
+    console.error('[auth] ❌ signInWithRedirect failed:', err);
     showAuthError(`${providerLabel} sign-in failed: ${err.message}`);
   }
 }
@@ -209,31 +213,58 @@ document.addEventListener('DOMContentLoaded', () => {
     const ready = window.authReady || Promise.resolve();
     ready.then(() => {
       // Handle redirect result after user returns from Google/provider sign-in
+      console.log('[auth-debug] Checking redirect result...');
       window.auth.getRedirectResult().then(result => {
+        console.log('[auth-debug] getRedirectResult() returned:', result);
+        console.log('[auth-debug] User from result:', result?.user);
+        console.log('[auth-debug] Credential from result:', result?.credential);
+
         if (result && result.user) {
-          console.log('[auth] Sign-in successful via redirect');
+          console.log('[auth] ✅ Sign-in successful via redirect');
+          console.log('[auth] User:', result.user.email, result.user.displayName);
           hideLoginModal();
+        } else {
+          console.log('[auth-debug] No user in redirect result');
+          // Check if we're already signed in (result can be null if already consumed)
+          if (window.auth.currentUser) {
+            console.log('[auth] ✅ Already signed in:', window.auth.currentUser.email);
+            hideLoginModal();
+          } else {
+            console.log('[auth-debug] No current user either - waiting for onAuthStateChanged...');
+          }
         }
       }).catch(err => {
+        console.error('[auth] ❌ Redirect sign-in error:', err);
+        console.error('[auth] Error code:', err.code);
+        console.error('[auth] Error message:', err.message);
         if (err.code === 'auth/account-exists-with-different-credential') {
           showAuthError('An account already exists with the same email but different sign-in method.');
         } else {
-          console.warn('[auth] Redirect sign-in error:', err);
           showAuthError(`Sign-in failed: ${err.message}`);
         }
       });
 
       window.auth.onAuthStateChanged(async user => {
+        console.log('[auth-debug] onAuthStateChanged fired');
+        console.log('[auth-debug] User object:', user);
+        if (user) {
+          console.log('[auth] ✅ User state:', user.email, user.displayName, user.uid);
+        } else {
+          console.log('[auth] ⚠️ No user in auth state');
+        }
+
         // Update the UI immediately so the user sees their logged-in state
         // without waiting for the Firestore sync to complete.
         renderAuthState();
         renderMenu();
         selectDifficulty(selectedDifficulty);
         if (user) {
+          console.log('[auth] Starting sync for user:', user.uid);
           await syncOnSignIn(user);
           // Re-render after sync so records and premium status are up-to-date.
           renderMenu();
           selectDifficulty(selectedDifficulty);
+          console.log('[auth] Sync complete');
         }
       });
 

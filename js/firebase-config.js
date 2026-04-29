@@ -23,17 +23,24 @@ const firebaseConfig = {
 };
 
 try {
+  console.log('[firebase] Initializing Firebase...');
   firebase.initializeApp(firebaseConfig);
   window.auth = firebase.auth();
   window.db   = firebase.firestore();
+  console.log('[firebase] Firebase initialized successfully');
+
   // Keep the user signed in across page loads and redirects.
   // Expose the promise so other modules can wait for persistence to be set
   // before attaching auth observers (avoids race conditions).
+  console.log('[firebase] Setting persistence to LOCAL...');
   window.authReady = window.auth
     .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-    .catch(e => { console.warn('Could not set auth persistence:', e); });
+    .then(() => {
+      console.log('[firebase] ✅ Persistence set to LOCAL');
+    })
+    .catch(e => { console.warn('[firebase] ⚠️ Could not set auth persistence:', e); });
 } catch (e) {
-  console.error('Firebase init failed:', e);
+  console.error('[firebase] ❌ Firebase init failed:', e);
   window.auth      = null;
   window.db        = null;
   window.authReady = Promise.resolve();
