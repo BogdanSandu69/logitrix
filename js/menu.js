@@ -202,15 +202,20 @@ document.addEventListener('DOMContentLoaded', () => {
   renderMenu();
   selectDifficulty('easy');
 
-  // Firebase auth state observer: fires on load and on every sign-in/out
+  // Firebase auth state observer: fires on load and on every sign-in/out.
+  // Wait for persistence to be configured before attaching the observer so
+  // that a stale session from a previous tab is not incorrectly restored.
   if (window.auth) {
-    window.auth.onAuthStateChanged(async user => {
-      if (user) {
-        await syncOnSignIn(user);
-      }
-      renderAuthState();
-      renderMenu();
-      selectDifficulty(selectedDifficulty);
+    const ready = window.authReady || Promise.resolve();
+    ready.then(() => {
+      window.auth.onAuthStateChanged(async user => {
+        if (user) {
+          await syncOnSignIn(user);
+        }
+        renderAuthState();
+        renderMenu();
+        selectDifficulty(selectedDifficulty);
+      });
     });
   } else {
     renderAuthState();

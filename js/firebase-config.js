@@ -26,8 +26,15 @@ try {
   firebase.initializeApp(firebaseConfig);
   window.auth = firebase.auth();
   window.db   = firebase.firestore();
+  // Keep the user signed in only for the current browser tab/session.
+  // Expose the promise so other modules can wait for persistence to be set
+  // before attaching auth observers (avoids race conditions).
+  window.authReady = window.auth
+    .setPersistence(firebase.auth.Auth.Persistence.SESSION)
+    .catch(e => { console.warn('Could not set auth persistence:', e); });
 } catch (e) {
   console.error('Firebase init failed:', e);
-  window.auth = null;
-  window.db   = null;
+  window.auth      = null;
+  window.db        = null;
+  window.authReady = Promise.resolve();
 }
