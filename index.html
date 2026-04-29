@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Logitrix — Logic Puzzle Game</title>
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/leaderboard.css" />
 </head>
 <body>
 
@@ -33,6 +34,11 @@
     <!-- Play button -->
     <div class="play-section">
       <button id="play-btn" data-difficulty="easy">▶ &nbsp;PLAY</button>
+    </div>
+
+    <!-- Leaderboards button -->
+    <div class="leaderboard-section">
+      <button id="leaderboard-btn">🏆 &nbsp;LEADERBOARDS</button>
     </div>
 
     <!-- How to play -->
@@ -110,6 +116,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="js/firebase-config.js"></script>
+  <script src="js/cloud-save.js"></script>
   <script src="js/menu.js"></script>
 </body>
 </html>

@@ -301,6 +301,22 @@ function showWin() {
   overlay.classList.add('visible');
 
   createParticles();
+
+  // ── Cloud save ────────────────────────────────────────────────────────────
+  if (window.cloudSave && window.auth && window.auth.currentUser) {
+    const user = window.auth.currentUser;
+    (async () => {
+      try {
+        const cloudNew = await window.cloudSave.saveCloudRecord(user.uid, difficulty, seconds);
+        await window.cloudSave.saveLeaderboardEntry(user, difficulty, seconds);
+        if (cloudNew) {
+          showToast('☁️ New cloud record saved!');
+        }
+      } catch (e) {
+        console.warn('[game] Cloud save failed:', e);
+      }
+    })();
+  }
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────

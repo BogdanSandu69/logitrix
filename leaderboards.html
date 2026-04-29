@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logitrix — Leaderboards</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/leaderboard.css" />
+</head>
+<body>
+
+  <!-- Back button top-left -->
+  <div class="lb-topbar">
+    <button id="lb-back-btn" class="lb-back-btn">← MENU</button>
+    <div id="lb-user-area"></div>
+  </div>
+
+  <div class="lb-container">
+
+    <!-- Hero -->
+    <div class="lb-hero">
+      <div class="lb-title">LEADERBOARDS</div>
+      <div class="lb-subtitle">Top players across all difficulties</div>
+    </div>
+
+    <!-- Difficulty tabs -->
+    <div class="lb-tabs">
+      <button class="lb-tab" data-difficulty="easy">Easy</button>
+      <button class="lb-tab" data-difficulty="hard">Hard</button>
+      <button class="lb-tab" data-difficulty="insane">Insane</button>
+      <button class="lb-tab" data-difficulty="legendary">Legendary</button>
+    </div>
+
+    <!-- Rank info (current user's rank) -->
+    <div id="lb-rank-info" class="lb-rank-info"></div>
+
+    <!-- Header row -->
+    <div class="lb-header-row">
+      <span class="lb-col-rank">Rank</span>
+      <span class="lb-col-avatar"></span>
+      <span class="lb-col-name">Player</span>
+      <span class="lb-col-time">Best Time</span>
+    </div>
+
+    <!-- Leaderboard list -->
+    <div id="lb-list" class="lb-list"></div>
+
+  </div>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/leaderboard.js"></script>
+</body>
+</html>

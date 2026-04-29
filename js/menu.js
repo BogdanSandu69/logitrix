@@ -60,6 +60,16 @@ async function syncPremiumFromFirestore(uid) {
   }
 }
 
+async function syncOnSignIn(user) {
+  if (!user) return;
+  await syncPremiumFromFirestore(user.uid);
+  // Save / update the user's profile and merge cloud records with local
+  if (window.cloudSave) {
+    await window.cloudSave.saveUserProfile(user);
+    await window.cloudSave.mergeAndSyncRecords(user.uid);
+  }
+}
+
 // ── Auth state rendering ───────────────────────────────────────────────────
 
 function renderAuthState() {
@@ -176,7 +186,7 @@ async function handleSignIn(providerFactory, providerLabel) {
   }
   try {
     const result = await window.auth.signInWithPopup(providerFactory());
-    await syncPremiumFromFirestore(result.user.uid);
+    await syncOnSignIn(result.user);
     hideLoginModal();
     renderAuthState();
     renderMenu();
@@ -196,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.auth) {
     window.auth.onAuthStateChanged(async user => {
       if (user) {
-        await syncPremiumFromFirestore(user.uid);
+        await syncOnSignIn(user);
       }
       renderAuthState();
       renderMenu();
@@ -267,6 +277,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const playBtn = document.getElementById('play-btn');
   if (playBtn) {
     playBtn.addEventListener('click', startGame);
+  }
+
+  const leaderboardBtn = document.getElementById('leaderboard-btn');
+  if (leaderboardBtn) {
+    leaderboardBtn.addEventListener('click', () => {
+      window.location.href = 'leaderboards.html';
+    });
   }
 
   // keyboard shortcut: Enter starts game
