@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logitrix — Play</title>
+  <link rel="stylesheet" href="css/game.css" />
+</head>
+<body>
+  <div class="game-container">
+
+    <!-- Header -->
+    <header class="game-header">
+      <button id="back-btn">← BACK</button>
+
+      <div class="game-title-wrap">
+        <div class="game-title">LOGITRIX</div>
+        <div id="difficulty-label"></div>
+      </div>
+
+      <div class="game-info">
+        <span id="timer">00:00</span>
+        <button id="hint-btn">💡 HINT</button>
+      </div>
+    </header>
+
+    <!-- Main: Grid + Rules -->
+    <main class="game-main">
+      <div class="grid-section">
+        <div id="grid" class="grid"></div>
+      </div>
+
+      <aside class="rules-panel">
+        <div class="rules-header">
+          RULES <span id="rules-counter">[0/0]</span>
+        </div>
+        <div id="rules-list"></div>
+      </aside>
+    </main>
+
+    <!-- Letter selector -->
+    <footer class="letters-footer">
+      <div id="letters-container"></div>
+    </footer>
+
+  </div>
+
+  <!-- Win overlay -->
+  <div id="win-overlay">
+    <div class="win-card">
+      <div class="win-trophy">🏆</div>
+      <div class="win-title">PUZZLE SOLVED!</div>
+
+      <div class="win-stats">
+        <div class="win-stat">
+          <span class="win-stat-label">Time</span>
+          <span class="win-stat-value" id="win-time">00:00</span>
+        </div>
+        <div class="win-stat">
+          <span class="win-stat-label">Difficulty</span>
+          <span class="win-stat-value" id="win-diff">Easy</span>
+        </div>
+        <div class="win-stat">
+          <span class="win-stat-label">Hints</span>
+          <span class="win-stat-value" id="win-hints">0</span>
+        </div>
+      </div>
+
+      <div id="win-record"></div>
+
+      <div class="win-buttons">
+        <button id="play-again-btn" class="win-btn win-btn-primary">▶ PLAY AGAIN</button>
+        <button id="menu-btn" class="win-btn win-btn-secondary">⌂ MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script load order: rules-engine → puzzle-generator → game -->
+  <script src="js/rules-engine.js"></script>
+  <script src="js/puzzle-generator.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
