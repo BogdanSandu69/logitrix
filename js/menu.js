@@ -185,16 +185,9 @@ async function handleSignIn(providerFactory, providerLabel) {
     return;
   }
   try {
-    const result = await window.auth.signInWithPopup(providerFactory());
-    await syncOnSignIn(result.user);
-    hideLoginModal();
-    renderAuthState();
-    renderMenu();
-    selectDifficulty(selectedDifficulty);
+    await window.auth.signInWithRedirect(providerFactory());
   } catch (err) {
-    if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
-      showAuthError(`${providerLabel} sign-in failed: ${err.message}`);
-    }
+    showAuthError(`${providerLabel} sign-in failed: ${err.message}`);
   }
 }
 
@@ -215,6 +208,17 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAuthState();
         renderMenu();
         selectDifficulty(selectedDifficulty);
+      });
+
+      // Handle the result (or error) from a signInWithRedirect flow.
+      // UI updates (syncOnSignIn, renderAuthState, etc.) are handled by
+      // the onAuthStateChanged observer above, so only dismiss the modal here.
+      window.auth.getRedirectResult().then(result => {
+        if (result && result.user) {
+          hideLoginModal();
+        }
+      }).catch(err => {
+        showAuthError(`Sign-in failed: ${err.message}`);
       });
     });
   } else {
