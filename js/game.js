@@ -38,7 +38,7 @@ function loadRecords() {
 
 function saveRecord(diff, secs) {
   const records = loadRecords();
-  if (records[diff] == null || secs < records[diff]) {
+  if (secs > 0 && (records[diff] == null || secs < records[diff])) {
     records[diff] = secs;
     localStorage.setItem('logitrix_records', JSON.stringify(records));
     return true;
