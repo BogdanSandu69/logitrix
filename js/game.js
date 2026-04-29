@@ -195,6 +195,61 @@ function showHint() {
   }, 3000);
 }
 
+// ── Share ──────────────────────────────────────────────────────────────────
+function getShareText() {
+  const diff  = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+  const time  = formatTime(seconds);
+  const hints = hintsUsed;
+  return `I just solved a ${diff} Logitrix puzzle in ${time}${hints > 0 ? ` using ${hints} hint${hints > 1 ? 's' : ''}` : ' with no hints'}! 🧩 Can you beat me? #Logitrix`;
+}
+
+function showToast(msg) {
+  let toast = document.getElementById('share-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'share-toast';
+    toast.style.cssText = `
+      position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);
+      background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.4);
+      color:#e8eaf6;font-family:'Exo 2',sans-serif;font-size:0.85rem;
+      padding:0.6rem 1.4rem;border-radius:8px;z-index:999;
+      backdrop-filter:blur(8px);transition:opacity 0.3s ease;
+    `;
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+}
+
+function shareResult(platform) {
+  const text    = getShareText();
+  const pageUrl = encodeURIComponent(window.location.origin + window.location.pathname.replace('game.html', ''));
+  const encoded = encodeURIComponent(text);
+
+  const urls = {
+    x:         `https://twitter.com/intent/tweet?text=${encoded}`,
+    facebook:  `https://www.facebook.com/sharer/sharer.php?u=${pageUrl}&quote=${encoded}`,
+    whatsapp:  `https://wa.me/?text=${encoded}`,
+    telegram:  `https://t.me/share/url?url=${pageUrl}&text=${encoded}`,
+    instagram: null,
+    copy:      null
+  };
+
+  if (platform === 'instagram' || platform === 'copy') {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(platform === 'instagram' ? '📸 Copied! Paste it on Instagram.' : '📋 Copied to clipboard!');
+    }).catch(() => {
+      showToast('Could not copy — try manually.');
+    });
+    return;
+  }
+
+  const url = urls[platform];
+  if (url) window.open(url, '_blank', 'noopener,noreferrer,width=600,height=480');
+}
+
 // ── Particles ──────────────────────────────────────────────────────────────
 function createParticles() {
   const overlay  = document.getElementById('win-overlay');
