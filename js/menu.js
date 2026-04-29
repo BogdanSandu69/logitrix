@@ -60,23 +60,13 @@ async function syncPremiumFromFirestore(uid) {
   }
 }
 
-async function syncRecordsFromFirestore(uid) {
-  if (!window.db) return;
-  try {
-    const doc = await window.db.collection('users').doc(uid).get();
-    if (doc.exists && doc.data().records) {
-      const cloudRecords = doc.data().records;
-      const localRecords = loadRecords();
-      // Merge: keep the best (lowest) time for each difficulty
-      for (const [diff, secs] of Object.entries(cloudRecords)) {
-        if (localRecords[diff] == null || secs < localRecords[diff]) {
-          localRecords[diff] = secs;
-        }
-      }
-      localStorage.setItem('logitrix_records', JSON.stringify(localRecords));
-    }
-  } catch (e) {
-    console.warn('Could not fetch records from Firestore:', e);
+async function syncOnSignIn(user) {
+  if (!user) return;
+  await syncPremiumFromFirestore(user.uid);
+  // Save / update the user's profile and merge cloud records with local
+  if (window.cloudSave) {
+    await window.cloudSave.saveUserProfile(user);
+    await window.cloudSave.mergeAndSyncRecords(user.uid);
   }
 }
 
@@ -196,8 +186,7 @@ async function handleSignIn(providerFactory, providerLabel) {
   }
   try {
     const result = await window.auth.signInWithPopup(providerFactory());
-    await syncPremiumFromFirestore(result.user.uid);
-    await syncRecordsFromFirestore(result.user.uid);
+    await syncOnSignIn(result.user);
     hideLoginModal();
     renderAuthState();
     renderMenu();
@@ -221,8 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ready.then(() => {
       window.auth.onAuthStateChanged(async user => {
         if (user) {
-          await syncPremiumFromFirestore(user.uid);
-          await syncRecordsFromFirestore(user.uid);
+          await syncOnSignIn(user);
         }
         renderAuthState();
         renderMenu();
@@ -294,6 +282,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const playBtn = document.getElementById('play-btn');
   if (playBtn) {
     playBtn.addEventListener('click', startGame);
+  }
+
+  const leaderboardBtn = document.getElementById('leaderboard-btn');
+  if (leaderboardBtn) {
+    leaderboardBtn.addEventListener('click', () => {
+      window.location.href = 'leaderboards.html';
+    });
   }
 
   // keyboard shortcut: Enter starts game
