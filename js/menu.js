@@ -2,13 +2,6 @@
 
 const DIFFICULTIES = ['easy', 'hard', 'insane', 'legendary'];
 
-// Auth polling settings for OAuth redirect fallback
-const AUTH_POLL_MAX_ATTEMPTS = 10;
-const AUTH_POLL_INTERVAL_MS  = 500;
-
-// Module-level handle so we can cancel any in-progress poll before starting a new one
-let _authPollInterval = null;
-
 const DIFF_META = {
   easy:      { label: 'Easy',      grid: '3×3', letters: 'A B C',        color: 'green',  locked: false },
   hard:      { label: 'Hard',      grid: '4×4', letters: 'A B C D',      color: 'red',    locked: false },
@@ -189,23 +182,6 @@ function hideAuthError() {
   if (el) el.classList.add('hidden');
 }
 
-// Detect if we just returned from OAuth redirect
-function isReturningFromOAuth() {
-  // Firebase adds these URL params during OAuth redirect
-  const params = new URLSearchParams(window.location.search);
-  return params.has('state') || params.has('code') ||
-         sessionStorage.getItem('logitrix_oauth_pending') === 'true';
-}
-
-function cleanOAuthParams() {
-  const url = new URL(window.location.href);
-  url.searchParams.delete('state');
-  url.searchParams.delete('code');
-  url.searchParams.delete('mode');
-  window.history.replaceState({}, document.title, url.pathname);
-  sessionStorage.removeItem('logitrix_oauth_pending');
-}
-
 async function handleSignIn(providerFactory, providerLabel) {
   hideAuthError();
   console.log('[auth] Initiating sign-in with:', providerLabel);
@@ -214,19 +190,36 @@ async function handleSignIn(providerFactory, providerLabel) {
     return;
   }
   try {
-    console.log('[auth] Calling signInWithRedirect...');
-    // Mark that we're starting OAuth flow
-    sessionStorage.setItem('logitrix_oauth_pending', 'true');
+    console.log('[auth] Opening sign-in popup...');
+    const provider = providerFactory();
 
-    // Use redirect instead of popup to avoid COOP errors
-    await window.auth.signInWithRedirect(providerFactory());
-    console.log('[auth] signInWithRedirect() returned (redirect will happen now)');
-    // User will be redirected to Google, then back to this page.
-    // The result is handled in getRedirectResult() below.
+    // Use popup instead of redirect for better reliability
+    const result = await window.auth.signInWithPopup(provider);
+
+    console.log('[auth] ✅ Sign-in successful via popup');
+    console.log('[auth] User:', result.user.email, result.user.displayName);
+
+    // Close the login modal immediately
+    hideLoginModal();
+
+    // The onAuthStateChanged listener will handle UI updates and sync
   } catch (err) {
-    console.error('[auth] ❌ signInWithRedirect failed:', err);
-    sessionStorage.removeItem('logitrix_oauth_pending');
-    showAuthError(`${providerLabel} sign-in failed: ${err.message}`);
+    console.error('[auth] ❌ Popup sign-in failed:', err);
+    console.error('[auth] Error code:', err.code);
+    console.error('[auth] Error message:', err.message);
+
+    if (err.code === 'auth/popup-closed-by-user') {
+      showAuthError('Sign-in cancelled. Please try again.');
+    } else if (err.code === 'auth/popup-blocked') {
+      showAuthError('Pop-up blocked by browser. Please allow pop-ups for this site and try again.');
+    } else if (err.code === 'auth/account-exists-with-different-credential') {
+      showAuthError('An account already exists with the same email but different sign-in method.');
+    } else if (err.code === 'auth/cancelled-popup-request') {
+      // Multiple popups opened, ignore this error
+      console.log('[auth] Previous popup cancelled, new one opened');
+    } else {
+      showAuthError(`${providerLabel} sign-in failed: ${err.message}`);
+    }
   }
 }
 
@@ -240,87 +233,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.auth) {
     const ready = window.authReady || Promise.resolve();
     ready.then(() => {
-      const returningFromOAuth = isReturningFromOAuth();
-      if (returningFromOAuth) {
-        console.log('[auth] 🔄 Detected return from OAuth redirect');
-      }
-
-      // Handle redirect result after user returns from Google/provider sign-in
-      console.log('[auth-debug] Checking redirect result...');
-      window.auth.getRedirectResult().then(result => {
-        console.log('[auth-debug] getRedirectResult() returned:', result);
-        console.log('[auth-debug] User from result:', result?.user);
-        console.log('[auth-debug] Credential from result:', result?.credential);
-
-        if (result && result.user) {
-          console.log('[auth] ✅ Sign-in successful via redirect');
-          console.log('[auth] User:', result.user.email, result.user.displayName);
-          hideLoginModal();
-          cleanOAuthParams();
-        } else {
-          console.log('[auth-debug] No user in redirect result');
-          // Check if we're already signed in (result can be null if already consumed)
-          if (window.auth.currentUser) {
-            console.log('[auth] ✅ Already signed in:', window.auth.currentUser.email);
-            hideLoginModal();
-            cleanOAuthParams();
-          } else if (returningFromOAuth) {
-            console.log('[auth-debug] Returning from OAuth but no user - starting polling fallback');
-            // Start polling for auth state (Firebase may be slow to update)
-            let pollAttempts = 0;
-
-            // Cancel any previous poll before starting a new one
-            if (_authPollInterval !== null) {
-              clearInterval(_authPollInterval);
-            }
-
-            _authPollInterval = setInterval(() => {
-              pollAttempts++;
-              console.log(`[auth-debug] Polling attempt ${pollAttempts}/${AUTH_POLL_MAX_ATTEMPTS}`);
-
-              if (window.auth.currentUser) {
-                console.log('[auth] ✅ User found via polling:', window.auth.currentUser.email);
-                clearInterval(_authPollInterval);
-                _authPollInterval = null;
-                hideLoginModal();
-                cleanOAuthParams();
-                // Manually trigger auth state changed to update UI
-                renderAuthState();
-                renderMenu();
-              } else if (pollAttempts >= AUTH_POLL_MAX_ATTEMPTS) {
-                console.error('[auth] ❌ Polling timeout - user not found after OAuth redirect');
-                clearInterval(_authPollInterval);
-                _authPollInterval = null;
-                cleanOAuthParams();
-                // Show error to user
-                showAuthError('Sign-in timed out. Please try signing in again.');
-              }
-            }, AUTH_POLL_INTERVAL_MS);
-          } else {
-            console.log('[auth-debug] No OAuth redirect detected, normal page load');
-          }
-        }
-      }).catch(err => {
-        console.error('[auth] ❌ Redirect sign-in error:', err);
-        console.error('[auth] Error code:', err.code);
-        console.error('[auth] Error message:', err.message);
-        cleanOAuthParams();
-        if (err.code === 'auth/account-exists-with-different-credential') {
-          showAuthError('An account already exists with the same email but different sign-in method.');
-        } else {
-          showAuthError(`Sign-in failed: ${err.message}`);
-        }
-      });
+      console.log('[auth] Attaching auth state observer');
 
       window.auth.onAuthStateChanged(async user => {
         console.log('[auth-debug] onAuthStateChanged fired');
         console.log('[auth-debug] User object:', user);
         if (user) {
           console.log('[auth] ✅ User state:', user.email, user.displayName, user.uid);
-          // If we were returning from OAuth, clean up now
-          if (isReturningFromOAuth()) {
-            cleanOAuthParams();
-          }
         } else {
           console.log('[auth] ⚠️ No user in auth state');
         }
@@ -330,6 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAuthState();
         renderMenu();
         selectDifficulty(selectedDifficulty);
+
         if (user) {
           console.log('[auth] Starting sync for user:', user.uid);
           await syncOnSignIn(user);
@@ -339,7 +259,6 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log('[auth] Sync complete');
         }
       });
-
     });
   } else {
     renderAuthState();
