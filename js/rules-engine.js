@@ -170,11 +170,12 @@ class RulesEngine {
         return grid[rule.row][rule.col] === rule.letter;
       case 'sandwich': {
         const row = grid[rule.row];
-        if (row[rule.col - 1] === undefined || row[rule.col + 1] === undefined || row[rule.col] === undefined) return false;
-        if (row[rule.col] === null || row[rule.col - 1] === null || row[rule.col + 1] === null) return false;
-        return row[rule.col] === rule.letter &&
-               row[rule.col - 1] === rule.between &&
-               row[rule.col + 1] === rule.between;
+        for (let c = 1; c < size - 1; c++) {
+          if (row[c] === rule.letter && row[c - 1] === rule.between && row[c + 1] === rule.between) {
+            return true;
+          }
+        }
+        return false;
       }
       case 'first_in_row':
         return grid[rule.row][0] === rule.letter;
