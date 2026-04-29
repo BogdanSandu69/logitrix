@@ -13,12 +13,13 @@
  */
 
 const firebaseConfig = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId:             "YOUR_APP_ID"
+  apiKey:            "AIzaSyCfFiQcfa0KmtmoFIaw_x3GY2UwfloWLqY",
+  authDomain:        "logitrix-b2f85.firebaseapp.com",
+  projectId:         "logitrix-b2f85",
+  storageBucket:     "logitrix-b2f85.firebasestorage.app",
+  messagingSenderId: "135436680081",
+  appId:             "1:135436680081:web:96b464bae182932d4bb830",
+  measurementId:     "G-SV79JWZ9KD"
 };
 
 try {
