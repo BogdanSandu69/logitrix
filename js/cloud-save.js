@@ -58,7 +58,7 @@ async function saveCloudRecord(uid, difficulty, secs) {
       [`records.${difficulty}`]:   secs,
       totalGamesPlayed:            firebase.firestore.FieldValue.increment(1),
       lastPlayed:                  firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    }, { mergeFields: [`records.${difficulty}`, 'totalGamesPlayed', 'lastPlayed'] });
 
     console.log(`[cloud-save] New cloud record saved — ${difficulty}: ${secs}s`);
     return true;
@@ -106,7 +106,7 @@ async function mergeAndSyncRecords(uid) {
     }
     if (Object.keys(updates).length > 0) {
       try {
-        await window.db.collection('users').doc(uid).set(updates, { merge: true });
+        await window.db.collection('users').doc(uid).set(updates, { mergeFields: Object.keys(updates) });
       } catch (e) {
         console.warn('[cloud-save] Could not push merged records to Firestore:', e);
       }
