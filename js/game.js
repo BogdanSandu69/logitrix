@@ -119,6 +119,11 @@ function selectLetter(l) {
   });
 }
 
+function deselectLetter() {
+  selectedLetter = null;
+  document.querySelectorAll('.letter-btn').forEach(btn => btn.classList.remove('selected'));
+}
+
 // ── Cell interaction ───────────────────────────────────────────────────────
 function handleCellClick(r, c) {
   if (gameWon) return;
@@ -193,7 +198,8 @@ function showHint() {
 // ── Particles ──────────────────────────────────────────────────────────────
 function createParticles() {
   const overlay  = document.getElementById('win-overlay');
-  const colors   = ['#00d4ff', '#7c3aed', '#ef4444', '#f59e0b', '#10b981', '#ec4899', '#3b82f6'];
+  // accent colors + all letter colors from the single source of truth
+  const colors   = ['#00d4ff', '#7c3aed', ...Object.values(LETTER_COLORS)];
   const count    = 120;
 
   for (let i = 0; i < count; i++) {
@@ -290,7 +296,7 @@ function init() {
       return;
     }
     if (e.key === 'Escape') {
-      selectLetter(selectedLetter); // deselect (toggle off)
+      deselectLetter();
     }
     if (e.key === 'h' || e.key === 'H') {
       showHint();

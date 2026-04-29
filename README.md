@@ -2,6 +2,17 @@
 
 A modern browser-based logic puzzle game where you place letters in a grid following a set of rules.
 
+## Screenshots
+
+### Main Menu
+![Logitrix Main Menu](https://github.com/user-attachments/assets/24db1ae3-4fb7-4175-a175-3ebff303a987)
+
+### Game Screen (Hard - 4×4)
+![Logitrix Game Screen](https://github.com/user-attachments/assets/0128e89d-b74c-41b2-884e-c5137ab20eb0)
+
+### Legendary Mode (6×6)
+![Logitrix Legendary](https://github.com/user-attachments/assets/da45a05f-2333-4990-bb89-049bb2fa7ae7)
+
 ## How to Play
 
 1. Choose a difficulty level from the main menu
@@ -13,12 +24,12 @@ A modern browser-based logic puzzle game where you place letters in a grid follo
 
 ## Difficulty Levels
 
-| Level     | Grid | Letters       |
-|-----------|------|---------------|
-| Easy      | 3×3  | A, B, C       |
-| Hard      | 4×4  | A, B, C, D    |
-| Insane    | 5×5  | A, B, C, D, E |
-| Legendary | 6×6  | A, B, C, D, E, F |
+| Level     | Grid | Letters           |
+|-----------|------|-------------------|
+| Easy      | 3×3  | A, B, C           |
+| Hard      | 4×4  | A, B, C, D        |
+| Insane    | 5×5  | A, B, C, D, E     |
+| Legendary | 6×6  | A, B, C, D, E, F  |
 
 ## Features
 
@@ -32,13 +43,13 @@ A modern browser-based logic puzzle game where you place letters in a grid follo
 ## File Structure
 
 ```
-index.html           Main menu
-game.html            Game screen
-css/styles.css       Menu + global styles
-css/game.css         Game-specific styles
-js/menu.js           Menu logic
-js/game.js           Core game logic
-js/rules-engine.js   Rule generation & validation
+index.html              Main menu
+game.html               Game screen
+css/styles.css          Menu + global styles
+css/game.css            Game-specific styles
+js/menu.js              Menu logic
+js/game.js              Core game logic
+js/rules-engine.js      Rule generation & validation
 js/puzzle-generator.js  Puzzle generation
 ```
 

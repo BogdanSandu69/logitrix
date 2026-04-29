@@ -170,7 +170,8 @@ class RulesEngine {
         return grid[rule.row][rule.col] === rule.letter;
       case 'sandwich': {
         const row = grid[rule.row];
-        if (!row[rule.col - 1] || !row[rule.col + 1] || !row[rule.col]) return false;
+        if (row[rule.col - 1] === undefined || row[rule.col + 1] === undefined || row[rule.col] === undefined) return false;
+        if (row[rule.col] === null || row[rule.col - 1] === null || row[rule.col + 1] === null) return false;
         return row[rule.col] === rule.letter &&
                row[rule.col - 1] === rule.between &&
                row[rule.col + 1] === rule.between;

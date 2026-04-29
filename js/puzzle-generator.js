@@ -23,10 +23,7 @@ class PuzzleGenerator {
     const { size, letters } = this;
 
     // Build a pool where each letter appears exactly `size` times
-    let pool = [];
-    for (const l of letters) {
-      for (let i = 0; i < size; i++) pool.push(l);
-    }
+    const pool = letters.flatMap(l => Array(size).fill(l));
 
     // Fisher-Yates shuffle
     for (let i = pool.length - 1; i > 0; i--) {
