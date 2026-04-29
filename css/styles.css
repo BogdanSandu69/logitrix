@@ -610,3 +610,24 @@ body > * { position: relative; z-index: 1; }
   text-align: center;
   line-height: 1.45;
 }
+
+/* ── Play-prompt skip button ────────────────────────────────────────────── */
+.play-prompt-skip-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.7rem;
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: none;
+  border: 1px solid var(--border-card);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.play-prompt-skip-btn:hover {
+  color: var(--text-primary);
+  border-color: rgba(255,255,255,0.25);
+}
