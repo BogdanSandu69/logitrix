@@ -67,6 +67,10 @@ async function syncOnSignIn(user) {
   if (window.cloudSave) {
     await window.cloudSave.saveUserProfile(user);
     await window.cloudSave.mergeAndSyncRecords(user.uid);
+    // Refresh the menu immediately after cloud records are merged into
+    // localStorage so the newly-synced best times are visible at once.
+    renderMenu();
+    selectDifficulty(selectedDifficulty);
   }
 }
 
