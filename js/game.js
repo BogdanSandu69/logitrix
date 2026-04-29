@@ -41,9 +41,26 @@ function saveRecord(diff, secs) {
   if (records[diff] == null || secs < records[diff]) {
     records[diff] = secs;
     localStorage.setItem('logitrix_records', JSON.stringify(records));
+    saveRecordToFirestore(diff, secs);
     return true;
   }
   return false;
+}
+
+async function saveRecordToFirestore(diff, secs) {
+  const user = window.auth && window.auth.currentUser;
+  if (!user || !window.db) return;
+  try {
+    const ref = window.db.collection('users').doc(user.uid);
+    const doc = await ref.get();
+    const cloudRecords = (doc.exists && doc.data().records) || {};
+    if (cloudRecords[diff] == null || secs < cloudRecords[diff]) {
+      cloudRecords[diff] = secs;
+      await ref.set({ records: cloudRecords }, { merge: true });
+    }
+  } catch (e) {
+    console.warn('Could not save record to Firestore:', e);
+  }
 }
 
 // ── Timer ──────────────────────────────────────────────────────────────────

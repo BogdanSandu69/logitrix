@@ -60,6 +60,26 @@ async function syncPremiumFromFirestore(uid) {
   }
 }
 
+async function syncRecordsFromFirestore(uid) {
+  if (!window.db) return;
+  try {
+    const doc = await window.db.collection('users').doc(uid).get();
+    if (doc.exists && doc.data().records) {
+      const cloudRecords = doc.data().records;
+      const localRecords = loadRecords();
+      // Merge: keep the best (lowest) time for each difficulty
+      for (const [diff, secs] of Object.entries(cloudRecords)) {
+        if (localRecords[diff] == null || secs < localRecords[diff]) {
+          localRecords[diff] = secs;
+        }
+      }
+      localStorage.setItem('logitrix_records', JSON.stringify(localRecords));
+    }
+  } catch (e) {
+    console.warn('Could not fetch records from Firestore:', e);
+  }
+}
+
 // ── Auth state rendering ───────────────────────────────────────────────────
 
 function renderAuthState() {
@@ -177,6 +197,7 @@ async function handleSignIn(providerFactory, providerLabel) {
   try {
     const result = await window.auth.signInWithPopup(providerFactory());
     await syncPremiumFromFirestore(result.user.uid);
+    await syncRecordsFromFirestore(result.user.uid);
     hideLoginModal();
     renderAuthState();
     renderMenu();
@@ -192,15 +213,21 @@ document.addEventListener('DOMContentLoaded', () => {
   renderMenu();
   selectDifficulty('easy');
 
-  // Firebase auth state observer: fires on load and on every sign-in/out
+  // Firebase auth state observer: fires on load and on every sign-in/out.
+  // Wait for persistence to be configured before attaching the observer so
+  // that a stale session from a previous tab is not incorrectly restored.
   if (window.auth) {
-    window.auth.onAuthStateChanged(async user => {
-      if (user) {
-        await syncPremiumFromFirestore(user.uid);
-      }
-      renderAuthState();
-      renderMenu();
-      selectDifficulty(selectedDifficulty);
+    const ready = window.authReady || Promise.resolve();
+    ready.then(() => {
+      window.auth.onAuthStateChanged(async user => {
+        if (user) {
+          await syncPremiumFromFirestore(user.uid);
+          await syncRecordsFromFirestore(user.uid);
+        }
+        renderAuthState();
+        renderMenu();
+        selectDifficulty(selectedDifficulty);
+      });
     });
   } else {
     renderAuthState();
