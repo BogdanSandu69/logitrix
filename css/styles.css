@@ -389,6 +389,14 @@ body > * { position: relative; z-index: 1; }
 
 .user-avatar { font-size: 1rem; }
 
+.user-avatar-img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .user-name {
   font-family: 'Exo 2', sans-serif;
   font-size: 0.8rem;
@@ -588,4 +596,17 @@ body > * { position: relative; z-index: 1; }
 #close-premium-cancel:hover {
   color: var(--text-primary);
   border-color: rgba(255,255,255,0.25);
+}
+
+/* ── Auth error message ─────────────────────────────────────────────────── */
+.auth-error {
+  margin-bottom: 1rem;
+  padding: 0.55rem 0.85rem;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  color: #fca5a5;
+  text-align: center;
+  line-height: 1.45;
 }
