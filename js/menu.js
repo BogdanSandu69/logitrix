@@ -189,14 +189,11 @@ async function handleSignIn(providerFactory, providerLabel) {
     return;
   }
   try {
-    const result = await window.auth.signInWithPopup(providerFactory());
-    if (result && result.user) {
-      hideLoginModal();
-    }
+    // Use redirect instead of popup to avoid COOP errors
+    await window.auth.signInWithRedirect(providerFactory());
+    // User will be redirected to Google, then back to this page.
+    // The result is handled in getRedirectResult() below.
   } catch (err) {
-    if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
-      return; // user dismissed the popup — not an error worth showing
-    }
     showAuthError(`${providerLabel} sign-in failed: ${err.message}`);
   }
 }
@@ -211,6 +208,21 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.auth) {
     const ready = window.authReady || Promise.resolve();
     ready.then(() => {
+      // Handle redirect result after user returns from Google/provider sign-in
+      window.auth.getRedirectResult().then(result => {
+        if (result && result.user) {
+          console.log('[auth] Sign-in successful via redirect');
+          hideLoginModal();
+        }
+      }).catch(err => {
+        if (err.code === 'auth/account-exists-with-different-credential') {
+          showAuthError('An account already exists with the same email but different sign-in method.');
+        } else {
+          console.warn('[auth] Redirect sign-in error:', err);
+          showAuthError(`Sign-in failed: ${err.message}`);
+        }
+      });
+
       window.auth.onAuthStateChanged(async user => {
         // Update the UI immediately so the user sees their logged-in state
         // without waiting for the Firestore sync to complete.
