@@ -159,6 +159,14 @@ class RulesEngine {
     }
   }
 
+  _xShapePositions(cr, cc) {
+    return [[cr-1,cc-1],[cr-1,cc+1],[cr,cc],[cr+1,cc-1],[cr+1,cc+1]];
+  }
+
+  _plusShapePositions(cr, cc) {
+    return [[cr-1,cc],[cr+1,cc],[cr,cc],[cr,cc-1],[cr,cc+1]];
+  }
+
   _matchesShape(positions, shape) {
     if (positions.length !== shape.length) return false;
     const posSet = new Set(positions.map(([r, c]) => `${r},${c}`));
@@ -173,14 +181,13 @@ class RulesEngine {
         for (let c = 0; c < size; c++)
           if (solution[r][c] === letter) positions.push([r, c]);
 
-      // X shape and + shape require exactly 5 cells (size === 5)
+      // X shape and + shape require exactly 5 cells; since each letter appears
+      // exactly `size` times, this condition holds only when size === 5.
       if (positions.length === 5) {
         let found = false;
         for (const [cr, cc] of positions) {
           if (found) break;
-          const xShape   = [[cr-1,cc-1],[cr-1,cc+1],[cr,cc],[cr+1,cc-1],[cr+1,cc+1]];
-          const plusShape = [[cr-1,cc],[cr+1,cc],[cr,cc],[cr,cc-1],[cr,cc+1]];
-          if (this._matchesShape(positions, xShape)) {
+          if (this._matchesShape(positions, this._xShapePositions(cr, cc))) {
             this.rules.push({
               type: 'shape_x',
               letter,
@@ -188,7 +195,7 @@ class RulesEngine {
               description: `Letter ${letter} forms an X shape`
             });
             found = true;
-          } else if (this._matchesShape(positions, plusShape)) {
+          } else if (this._matchesShape(positions, this._plusShapePositions(cr, cc))) {
             this.rules.push({
               type: 'shape_plus',
               letter,
@@ -283,13 +290,13 @@ class RulesEngine {
         return grid[rule.row][size - 1] === rule.letter;
       case 'shape_x': {
         const [cr, cc] = rule.center;
-        const xShape = [[cr-1,cc-1],[cr-1,cc+1],[cr,cc],[cr+1,cc-1],[cr+1,cc+1]];
-        return xShape.every(([r, c]) => r >= 0 && r < size && c >= 0 && c < size && grid[r][c] === rule.letter);
+        return this._xShapePositions(cr, cc)
+          .every(([r, c]) => r >= 0 && r < size && c >= 0 && c < size && grid[r][c] === rule.letter);
       }
       case 'shape_plus': {
         const [cr, cc] = rule.center;
-        const plusShape = [[cr-1,cc],[cr+1,cc],[cr,cc],[cr,cc-1],[cr,cc+1]];
-        return plusShape.every(([r, c]) => r >= 0 && r < size && c >= 0 && c < size && grid[r][c] === rule.letter);
+        return this._plusShapePositions(cr, cc)
+          .every(([r, c]) => r >= 0 && r < size && c >= 0 && c < size && grid[r][c] === rule.letter);
       }
       case 'shape_diagonal': {
         if (rule.direction === 'main') {
