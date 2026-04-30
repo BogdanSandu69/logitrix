@@ -577,6 +577,21 @@ body > * { position: relative; z-index: 1; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
 
+.letter-btn[draggable="true"] { cursor: grab; }
+
+.letter-btn.dragging {
+  opacity: 0.35;
+  cursor: grabbing;
+}
+
+.letter-btn.drag-over {
+  border-color: var(--accent-cyan) !important;
+  background: color-mix(in srgb, var(--accent-cyan) 20%, rgba(0,0,0,0.3)) !important;
+  transform: scale(1.12) translateY(-3px);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-cyan) 40%, transparent),
+              0 6px 24px color-mix(in srgb, var(--accent-cyan) 45%, transparent);
+}
+
 /* ── Share section ──────────────────────────────────────────────────────── */
 .win-share {
   margin-bottom: 1.2rem;

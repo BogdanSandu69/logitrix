@@ -17,6 +17,7 @@ let letters        = [];
 let rules          = [];
 let size           = 3;
 let selectedLetter = null;
+let dragSrcIndex   = null;
 let timerInterval  = null;
 let seconds        = 0;
 let hintsUsed      = 0;
@@ -104,7 +105,46 @@ function renderLetters() {
     btn.textContent = l;
     btn.style.setProperty('--lc', LETTER_COLORS[l]);
     btn.title = `Select ${l} (key ${idx + 1})`;
+    btn.setAttribute('draggable', 'true');
+
     btn.addEventListener('click', () => selectLetter(l));
+
+    btn.addEventListener('dragstart', e => {
+      dragSrcIndex = idx;
+      e.dataTransfer.effectAllowed = 'move';
+      // slight delay so the drag ghost renders before we dim the source
+      requestAnimationFrame(() => btn.classList.add('dragging'));
+    });
+
+    btn.addEventListener('dragend', () => {
+      dragSrcIndex = null;
+      document.querySelectorAll('.letter-btn').forEach(b =>
+        b.classList.remove('dragging', 'drag-over')
+      );
+    });
+
+    btn.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (dragSrcIndex !== null && dragSrcIndex !== idx) {
+        btn.classList.add('drag-over');
+      }
+    });
+
+    btn.addEventListener('dragleave', () => {
+      btn.classList.remove('drag-over');
+    });
+
+    btn.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragSrcIndex !== null && dragSrcIndex !== idx) {
+        [letters[dragSrcIndex], letters[idx]] = [letters[idx], letters[dragSrcIndex]];
+        dragSrcIndex = null;
+        renderLetters();
+      }
+    });
+
+    if (l === selectedLetter) btn.classList.add('selected');
     container.appendChild(btn);
   });
 }
