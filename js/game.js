@@ -112,6 +112,7 @@ function renderLetters() {
     btn.addEventListener('dragstart', e => {
       dragSrcIndex = idx;
       e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', String(idx));
       // slight delay so the drag ghost renders before we dim the source
       requestAnimationFrame(() => btn.classList.add('dragging'));
     });
