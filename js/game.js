@@ -71,7 +71,8 @@ function renderGrid() {
       cell.className = 'grid-cell';
       cell.dataset.row = r;
       cell.dataset.col = c;
-      cell.addEventListener('click', () => handleCellClick(r, c));
+      cell.addEventListener('click',       () => handleCellClick(r, c));
+      cell.addEventListener('pointerdown', (e) => _startGridDrag(e, r, c));
       gridEl.appendChild(cell);
     }
   }
@@ -91,6 +92,109 @@ function refreshAllCells() {
   for (let r = 0; r < size; r++)
     for (let c = 0; c < size; c++)
       updateCell(r, c);
+}
+
+// ── Grid cell drag-to-swap (pointer events) ────────────────────────────────
+const _DRAG_THRESHOLD = 6; // px movement before committing to a drag
+let _gridDrag = null;
+let _gridDragJustHappened = false;
+
+function _startGridDrag(e, r, c) {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  if (!grid[r][c]) return;                      // only drag occupied cells
+  if (hintCells[r] && hintCells[r][c]) return;  // hint-locked cells are immovable
+  const cell = e.currentTarget;
+  cell.releasePointerCapture(e.pointerId);
+  _gridDrag = {
+    srcR: r, srcC: c,
+    cell,
+    startX:  e.clientX,
+    startY:  e.clientY,
+    offsetX: 0,
+    offsetY: 0,
+    clone:   null,
+    active:  false,
+  };
+  document.addEventListener('pointermove',   _onGridDragMove);
+  document.addEventListener('pointerup',     _onGridDragEnd);
+  document.addEventListener('pointercancel', _onGridDragEnd);
+}
+
+function _onGridDragMove(e) {
+  if (!_gridDrag) return;
+  const dx = e.clientX - _gridDrag.startX;
+  const dy = e.clientY - _gridDrag.startY;
+
+  if (!_gridDrag.active) {
+    if (Math.hypot(dx, dy) < _DRAG_THRESHOLD) return;
+    _gridDrag.active = true;
+    const rect = _gridDrag.cell.getBoundingClientRect();
+    _gridDrag.offsetX = _gridDrag.startX - rect.left;
+    _gridDrag.offsetY = _gridDrag.startY - rect.top;
+    const clone = _gridDrag.cell.cloneNode(true);
+    Object.assign(clone.style, {
+      position:      'fixed',
+      width:         rect.width  + 'px',
+      height:        rect.height + 'px',
+      left:          rect.left   + 'px',
+      top:           rect.top    + 'px',
+      opacity:       '0.9',
+      pointerEvents: 'none',
+      zIndex:        '9999',
+      transition:    'none',
+      margin:        '0',
+      transform:     'scale(1.08)',
+    });
+    document.body.appendChild(clone);
+    _gridDrag.clone = clone;
+    _gridDrag.cell.classList.add('dragging');
+  }
+
+  _gridDrag.clone.style.left = (e.clientX - _gridDrag.offsetX) + 'px';
+  _gridDrag.clone.style.top  = (e.clientY - _gridDrag.offsetY) + 'px';
+
+  // Highlight valid drop target (any cell except the source and hint-locked ones)
+  document.querySelectorAll('.grid-cell').forEach(cell => {
+    const cr = parseInt(cell.dataset.row);
+    const cc = parseInt(cell.dataset.col);
+    if (cr === _gridDrag.srcR && cc === _gridDrag.srcC) return;
+    if (hintCells[cr] && hintCells[cr][cc]) return;
+    const bbox = cell.getBoundingClientRect();
+    const hit  = e.clientX >= bbox.left && e.clientX <= bbox.right &&
+                 e.clientY >= bbox.top  && e.clientY <= bbox.bottom;
+    cell.classList.toggle('drag-over', hit);
+  });
+}
+
+function _onGridDragEnd(e) {
+  document.removeEventListener('pointermove',   _onGridDragMove);
+  document.removeEventListener('pointerup',     _onGridDragEnd);
+  document.removeEventListener('pointercancel', _onGridDragEnd);
+  if (!_gridDrag) return;
+
+  if (!_gridDrag.active) { _gridDrag = null; return; }  // was just a tap — let click fire
+
+  if (_gridDrag.clone) _gridDrag.clone.remove();
+
+  let targetR = null, targetC = null;
+  document.querySelectorAll('.grid-cell').forEach(cell => {
+    if (cell.classList.contains('drag-over')) {
+      targetR = parseInt(cell.dataset.row);
+      targetC = parseInt(cell.dataset.col);
+    }
+    cell.classList.remove('dragging', 'drag-over');
+  });
+
+  const { srcR, srcC } = _gridDrag;
+  _gridDrag = null;
+
+  if (targetR !== null) {
+    _gridDragJustHappened = true;
+    [grid[srcR][srcC], grid[targetR][targetC]] = [grid[targetR][targetC], grid[srcR][srcC]];
+    updateCell(srcR, srcC);
+    updateCell(targetR, targetC);
+    checkRules();
+  }
 }
 
 // ── Letter tile drag-to-swap (pointer events) ──────────────────────────────
@@ -113,8 +217,6 @@ function _startDrag(e) {
   document.addEventListener('pointerup',     _onDragEnd);
   document.addEventListener('pointercancel', _onDragEnd);
 }
-
-const _DRAG_THRESHOLD = 6; // px before we commit to a drag
 
 function _onDragMove(e) {
   if (!_drag) return;
@@ -225,6 +327,7 @@ function deselectLetter() {
 
 // ── Cell interaction ───────────────────────────────────────────────────────
 function handleCellClick(r, c) {
+  if (_gridDragJustHappened) { _gridDragJustHappened = false; return; }
   if (gameWon) return;
   if (!selectedLetter) return;
   if (hintCells[r] && hintCells[r][c]) return;  // locked by hint — cannot change
