@@ -16,9 +16,8 @@ let hintCells      = [];   // tracks cells locked by hints
 let letters        = [];
 let rules          = [];
 let size           = 3;
-let selectedLetter = null;
-let dragSrcIndex   = null;
-let timerInterval  = null;
+let selectedLetter  = null;
+let timerInterval   = null;
 let seconds        = 0;
 let hintsUsed      = 0;
 let difficulty     = 'easy';
@@ -94,6 +93,99 @@ function refreshAllCells() {
       updateCell(r, c);
 }
 
+// ── Letter tile drag-to-swap (pointer events) ──────────────────────────────
+let _drag = null;  // active drag state
+
+function _startDrag(e) {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  const btn = e.currentTarget;
+  _drag = {
+    srcIdx:  parseInt(btn.dataset.index),
+    btn,
+    startX:  e.clientX,
+    startY:  e.clientY,
+    offsetX: 0,
+    offsetY: 0,
+    clone:   null,
+    active:  false,
+  };
+  document.addEventListener('pointermove',   _onDragMove);
+  document.addEventListener('pointerup',     _onDragEnd);
+  document.addEventListener('pointercancel', _onDragEnd);
+}
+
+const _DRAG_THRESHOLD = 6; // px before we commit to a drag
+
+function _onDragMove(e) {
+  if (!_drag) return;
+  const dx = e.clientX - _drag.startX;
+  const dy = e.clientY - _drag.startY;
+
+  if (!_drag.active) {
+    if (Math.hypot(dx, dy) < _DRAG_THRESHOLD) return;
+    // Commit: create floating clone and dim source
+    _drag.active = true;
+    const rect = _drag.btn.getBoundingClientRect();
+    _drag.offsetX = _drag.startX - rect.left;
+    _drag.offsetY = _drag.startY - rect.top;
+    const clone = _drag.btn.cloneNode(true);
+    Object.assign(clone.style, {
+      position:      'fixed',
+      width:         rect.width  + 'px',
+      height:        rect.height + 'px',
+      left:          rect.left   + 'px',
+      top:           rect.top    + 'px',
+      opacity:       '0.9',
+      pointerEvents: 'none',
+      zIndex:        '9999',
+      transition:    'none',
+      margin:        '0',
+      transform:     'scale(1.12) translateY(-3px)',
+    });
+    document.body.appendChild(clone);
+    _drag.clone = clone;
+    _drag.btn.classList.add('dragging');
+  }
+
+  // Move clone with the pointer
+  _drag.clone.style.left = (e.clientX - _drag.offsetX) + 'px';
+  _drag.clone.style.top  = (e.clientY - _drag.offsetY) + 'px';
+
+  // Highlight whichever button the pointer is over (excluding source)
+  document.querySelectorAll('.letter-btn').forEach(b => {
+    if (parseInt(b.dataset.index) === _drag.srcIdx) return;
+    const r   = b.getBoundingClientRect();
+    const hit = e.clientX >= r.left && e.clientX <= r.right &&
+                e.clientY >= r.top  && e.clientY <= r.bottom;
+    b.classList.toggle('drag-over', hit);
+  });
+}
+
+function _onDragEnd(e) {
+  document.removeEventListener('pointermove',   _onDragMove);
+  document.removeEventListener('pointerup',     _onDragEnd);
+  document.removeEventListener('pointercancel', _onDragEnd);
+  if (!_drag) return;
+
+  if (!_drag.active) { _drag = null; return; }   // was just a tap — let click fire
+
+  // Cleanup
+  if (_drag.clone) { _drag.clone.remove(); }
+  let targetIdx = null;
+  document.querySelectorAll('.letter-btn').forEach(b => {
+    if (b.classList.contains('drag-over')) targetIdx = parseInt(b.dataset.index);
+    b.classList.remove('dragging', 'drag-over');
+  });
+
+  const srcIdx = _drag.srcIdx;
+  _drag = null;
+
+  if (targetIdx !== null && targetIdx !== srcIdx) {
+    [letters[srcIdx], letters[targetIdx]] = [letters[targetIdx], letters[srcIdx]];
+    renderLetters();
+  }
+}
+
 // ── Letter buttons ─────────────────────────────────────────────────────────
 function renderLetters() {
   const container = document.getElementById('letters-container');
@@ -102,48 +194,13 @@ function renderLetters() {
     const btn = document.createElement('button');
     btn.className = 'letter-btn';
     btn.dataset.letter = l;
+    btn.dataset.index  = String(idx);
     btn.textContent = l;
     btn.style.setProperty('--lc', LETTER_COLORS[l]);
     btn.title = `Select ${l} (key ${idx + 1})`;
-    btn.setAttribute('draggable', 'true');
 
-    btn.addEventListener('click', () => selectLetter(l));
-
-    btn.addEventListener('dragstart', e => {
-      dragSrcIndex = idx;
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', String(idx));
-      // slight delay so the drag ghost renders before we dim the source
-      requestAnimationFrame(() => btn.classList.add('dragging'));
-    });
-
-    btn.addEventListener('dragend', () => {
-      dragSrcIndex = null;
-      document.querySelectorAll('.letter-btn').forEach(b =>
-        b.classList.remove('dragging', 'drag-over')
-      );
-    });
-
-    btn.addEventListener('dragover', e => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      if (dragSrcIndex !== null && dragSrcIndex !== idx) {
-        btn.classList.add('drag-over');
-      }
-    });
-
-    btn.addEventListener('dragleave', () => {
-      btn.classList.remove('drag-over');
-    });
-
-    btn.addEventListener('drop', e => {
-      e.preventDefault();
-      if (dragSrcIndex !== null && dragSrcIndex !== idx) {
-        [letters[dragSrcIndex], letters[idx]] = [letters[idx], letters[dragSrcIndex]];
-        dragSrcIndex = null;
-        renderLetters();
-      }
-    });
+    btn.addEventListener('click',       () => selectLetter(l));
+    btn.addEventListener('pointerdown', _startDrag);
 
     if (l === selectedLetter) btn.classList.add('selected');
     container.appendChild(btn);

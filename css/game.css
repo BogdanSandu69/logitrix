@@ -365,7 +365,8 @@ body > * { position: relative; z-index: 1; }
   background: color-mix(in srgb, var(--lc, #fff) 10%, rgba(0,0,0,0.3));
   border: 2px solid color-mix(in srgb, var(--lc, #fff) 40%, transparent);
   border-radius: 12px;
-  cursor: pointer;
+  cursor: grab;
+  touch-action: none;
   transition: transform 0.12s ease, box-shadow 0.12s ease,
               background 0.12s ease, border-color 0.12s ease;
   position: relative;
@@ -577,13 +578,10 @@ body > * { position: relative; z-index: 1; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
 
-.letter-btn[draggable="true"] { cursor: grab; }
-
 .letter-btn.dragging {
   opacity: 0.35;
   cursor: grabbing;
 }
-
 .letter-btn.drag-over {
   border-color: var(--accent-cyan) !important;
   background: color-mix(in srgb, var(--accent-cyan) 20%, rgba(0,0,0,0.3)) !important;
