@@ -17,7 +17,8 @@
   --color-d:       #10b981;
   --color-e:       #8b5cf6;
   --color-f:       #ec4899;
-  --easy-color:    #10b981;
+  --easy-color:    #9ca3af;
+  --medium-color:  #10b981;
   --hard-color:    #ef4444;
   --insane-color:  #8b5cf6;
   --leg-color:     #ffd700;
@@ -112,13 +113,24 @@ body > * { position: relative; z-index: 1; }
 }
 
 #difficulty-buttons {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
 }
 
+.diff-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.diff-row-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
 @media (max-width: 500px) {
-  #difficulty-buttons { grid-template-columns: 1fr; }
+  .diff-row,
+  .diff-row-2 { grid-template-columns: 1fr; }
 }
 
 .diff-btn {
@@ -153,7 +165,8 @@ body > * { position: relative; z-index: 1; }
 }
 
 /* Color variants */
-.diff-green  { --dc: var(--easy-color); }
+.diff-grey   { --dc: var(--easy-color); }
+.diff-green  { --dc: var(--medium-color); }
 .diff-red    { --dc: var(--hard-color); }
 .diff-purple { --dc: var(--insane-color); }
 .diff-gold   { --dc: var(--leg-color); }

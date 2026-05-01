@@ -589,4 +589,66 @@ function init() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', init);
+// ── Premium gate ───────────────────────────────────────────────────────────
+const PREMIUM_DIFFICULTIES = ['insane', 'legendary'];
+
+/**
+ * Returns a Promise that resolves to true if the player may access the given
+ * difficulty, false if it is premium-locked and the player does not have
+ * premium.  Waits for Firebase auth to restore the persisted session before
+ * deciding, so that a logged-in premium user is never incorrectly blocked.
+ */
+function checkPremiumGate(diff) {
+  if (!PREMIUM_DIFFICULTIES.includes(diff)) return Promise.resolve(true);
+
+  return new Promise(resolve => {
+    if (!window.auth) {
+      // Firebase not configured — fall back to anonymous localStorage key
+      resolve(localStorage.getItem('logitrix_premium') === 'true');
+      return;
+    }
+
+    const ready = window.authReady || Promise.resolve();
+    ready.then(() => {
+      // onAuthStateChanged fires immediately with the restored session
+      const unsubscribe = window.auth.onAuthStateChanged(user => {
+        const key = user ? `logitrix_premium_${user.uid}` : 'logitrix_premium';
+        resolve(localStorage.getItem(key) === 'true');
+        unsubscribe();
+      });
+    });
+  });
+}
+
+/** Shows a brief premium-required overlay, then redirects to the main menu. */
+function showPremiumBlocker() {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = [
+    'position:fixed', 'inset:0', 'display:flex', 'align-items:center',
+    'justify-content:center', 'flex-direction:column', 'gap:1rem',
+    'background:rgba(13,13,43,0.92)', 'z-index:9999',
+    "font-family:'Exo 2',sans-serif", 'color:#e8eaf6',
+    'text-align:center', 'padding:1rem'
+  ].join(';');
+  overlay.innerHTML = `
+    <div style="font-size:2rem">🔒</div>
+    <div style="font-size:1.1rem;font-weight:700;">Premium Difficulty</div>
+    <div style="font-size:0.85rem;color:rgba(255,255,255,0.5);">
+      Insane &amp; Legendary require a premium unlock.<br>Redirecting to menu…
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(() => { window.location.href = 'index.html'; }, 1800);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(location.search);
+  const diff   = params.get('difficulty') || 'easy';
+
+  const allowed = await checkPremiumGate(diff);
+  if (!allowed) {
+    showPremiumBlocker();
+    return;
+  }
+
+  init();
+});

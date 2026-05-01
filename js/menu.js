@@ -1,12 +1,13 @@
 /* menu.js — Main menu logic */
 
-const DIFFICULTIES = ['easy', 'hard', 'insane', 'legendary'];
+const DIFFICULTIES = ['easy', 'medium', 'hard', 'insane', 'legendary'];
 
 const DIFF_META = {
-  easy:      { label: 'Easy',      grid: '3×3', letters: 'A B C',        color: 'green',  locked: false },
-  hard:      { label: 'Hard',      grid: '4×4', letters: 'A B C D',      color: 'red',    locked: false },
-  insane:    { label: 'Insane',    grid: '5×5', letters: 'A B C D E',    color: 'purple', locked: true  },
-  legendary: { label: 'Legendary', grid: '6×6', letters: 'A B C D E F', color: 'gold',   locked: true  }
+  easy:      { label: 'Easy',      grid: '3×3', letters: 'A B C',            color: 'grey',   locked: false },
+  medium:    { label: 'Medium',    grid: '4×4', letters: 'A B C D',          color: 'green',  locked: false },
+  hard:      { label: 'Hard',      grid: '5×5', letters: 'A B C D E',        color: 'red',    locked: false },
+  insane:    { label: 'Insane',    grid: '6×6', letters: 'A B C D E F',      color: 'purple', locked: true  },
+  legendary: { label: 'Legendary', grid: '7×7', letters: 'A B C D E F G',   color: 'gold',   locked: true  }
 };
 
 function formatTime(secs) {
@@ -69,6 +70,7 @@ async function initializeUserDocument(uid) {
       await docRef.set({
         isPremium: false,
         easy: null,
+        medium: null,
         hard: null,
         insane: null,
         legendary: null,
@@ -107,6 +109,7 @@ async function syncRecordsToFirestore(uid) {
 
     // Only include times that exist and are valid (not null/undefined/0)
     if (records.easy != null && records.easy > 0) firestoreData.easy = records.easy;
+    if (records.medium != null && records.medium > 0) firestoreData.medium = records.medium;
     if (records.hard != null && records.hard > 0) firestoreData.hard = records.hard;
     if (records.insane != null && records.insane > 0) firestoreData.insane = records.insane;
     if (records.legendary != null && records.legendary > 0) firestoreData.legendary = records.legendary;
@@ -156,30 +159,42 @@ function renderMenu() {
 
   container.innerHTML = '';
 
-  for (const diff of DIFFICULTIES) {
-    const meta    = DIFF_META[diff];
-    const record  = records[diff];
-    const recText = record != null ? `Best: ${formatTime(record)}` : '--:--';
-    const isLocked = meta.locked && !premium;
+  // Row 1: Easy, Medium, Hard — Row 2: Insane, Legendary
+  const row1Diffs = ['easy', 'medium', 'hard'];
+  const row2Diffs = ['insane', 'legendary'];
 
-    const btn = document.createElement('button');
-    btn.className = `diff-btn diff-${meta.color}${isLocked ? ' diff-locked' : ''}`;
-    btn.dataset.difficulty = diff;
-    btn.innerHTML = `
-      ${isLocked ? '<span class="lock-badge">🔒 $2</span>' : ''}
-      <span class="diff-name">${meta.label}</span>
-      <span class="diff-grid">${meta.grid} &bull; ${meta.letters}</span>
-      <span class="diff-record">${isLocked ? 'Premium Only' : recText}</span>
-    `;
-    btn.addEventListener('click', () => {
-      if (isLocked) {
-        showPremiumModal();
-      } else {
-        selectDifficulty(diff);
-      }
-    });
-    container.appendChild(btn);
+  function buildRow(diffs, rowClass) {
+    const row = document.createElement('div');
+    row.className = rowClass;
+    for (const diff of diffs) {
+      const meta    = DIFF_META[diff];
+      const record  = records[diff];
+      const recText = record != null ? `Best: ${formatTime(record)}` : '--:--';
+      const isLocked = meta.locked && !premium;
+
+      const btn = document.createElement('button');
+      btn.className = `diff-btn diff-${meta.color}${isLocked ? ' diff-locked' : ''}`;
+      btn.dataset.difficulty = diff;
+      btn.innerHTML = `
+        ${isLocked ? '<span class="lock-badge">🔒 $2</span>' : ''}
+        <span class="diff-name">${meta.label}</span>
+        <span class="diff-grid">${meta.grid} &bull; ${meta.letters}</span>
+        <span class="diff-record">${isLocked ? 'Premium Only' : recText}</span>
+      `;
+      btn.addEventListener('click', () => {
+        if (isLocked) {
+          showPremiumModal();
+        } else {
+          selectDifficulty(diff);
+        }
+      });
+      row.appendChild(btn);
+    }
+    container.appendChild(row);
   }
+
+  buildRow(row1Diffs, 'diff-row');
+  buildRow(row2Diffs, 'diff-row diff-row-2');
 }
 
 let selectedDifficulty = 'easy';
@@ -437,10 +452,12 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (e.key === '1') {
       selectDifficulty('easy');
     } else if (e.key === '2') {
-      selectDifficulty('hard');
+      selectDifficulty('medium');
     } else if (e.key === '3') {
-      if (isPremiumUnlocked()) { selectDifficulty('insane'); } else { showPremiumModal(); }
+      selectDifficulty('hard');
     } else if (e.key === '4') {
+      if (isPremiumUnlocked()) { selectDifficulty('insane'); } else { showPremiumModal(); }
+    } else if (e.key === '5') {
       if (isPremiumUnlocked()) { selectDifficulty('legendary'); } else { showPremiumModal(); }
     }
   });
