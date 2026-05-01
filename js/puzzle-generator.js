@@ -20,9 +20,10 @@ class PuzzleGenerator {
     this.difficulty = difficulty;
     const configs = {
       easy:      { size: 3, count: 3 },
-      hard:      { size: 4, count: 4 },
-      insane:    { size: 5, count: 5 },
-      legendary: { size: 6, count: 6 }
+      medium:    { size: 4, count: 4 },
+      hard:      { size: 5, count: 5 },
+      insane:    { size: 6, count: 6 },
+      legendary: { size: 7, count: 7 }
     };
     const cfg    = configs[difficulty] || configs.easy;
     this.size    = cfg.size;

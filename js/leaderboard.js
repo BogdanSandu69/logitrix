@@ -1,8 +1,8 @@
 /* leaderboard.js — Leaderboard queries, real-time updates, and UI logic */
 
-const LB_DIFFICULTIES = ['easy', 'hard', 'insane', 'legendary'];
-const LB_LABELS       = { easy: 'Easy', hard: 'Hard', insane: 'Insane', legendary: 'Legendary' };
-const LB_COLORS       = { easy: '#10b981', hard: '#ef4444', insane: '#8b5cf6', legendary: '#ffd700' };
+const LB_DIFFICULTIES = ['easy', 'medium', 'hard', 'insane', 'legendary'];
+const LB_LABELS       = { easy: 'Easy', medium: 'Medium', hard: 'Hard', insane: 'Insane', legendary: 'Legendary' };
+const LB_COLORS       = { easy: '#9ca3af', medium: '#10b981', hard: '#ef4444', insane: '#8b5cf6', legendary: '#ffd700' };
 const LB_TOP_N        = 100;
 
 let lbCurrentDiff     = 'easy';
