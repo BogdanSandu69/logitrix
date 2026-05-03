@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="120" fill="#081428"/>
+
+  <!-- Row 1: L O (cyan) G I (red) -->
+  <!-- L -->
+  <text x="100" y="320" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="230" fill="#00d8e8">L</text>
+  <!-- O -->
+  <text x="255" y="320" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="230" fill="#00d8e8">O</text>
+  <!-- G -->
+  <text x="512" y="320" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="230" fill="#e83c3c">G</text>
+  <!-- I -->
+  <text x="730" y="320" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="230" fill="#e83c3c">I</text>
+
+  <!-- Row 2: T R (red) I X (cyan) -->
+  <!-- T -->
+  <text x="100" y="560" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="230" fill="#e83c3c">T</text>
+  <!-- R -->
+  <text x="305" y="560" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="230" fill="#e83c3c">R</text>
+  <!-- I -->
+  <text x="545" y="560" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="230" fill="#00d8e8">I</text>
+  <!-- X -->
+  <text x="630" y="560" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="230" fill="#00d8e8">X</text>
+
+  <!-- Row 3: 4 rounded squares (cyan outline) -->
+  <rect x="75"  y="610" width="185" height="185" rx="28" fill="#0d2240" stroke="#00d8e8" stroke-width="9"/>
+  <rect x="280" y="610" width="185" height="185" rx="28" fill="#0d2240" stroke="#00d8e8" stroke-width="9"/>
+  <rect x="485" y="610" width="185" height="185" rx="28" fill="#0d2240" stroke="#00d8e8" stroke-width="9"/>
+  <rect x="690" y="610" width="185" height="185" rx="28" fill="#0d2240" stroke="#00d8e8" stroke-width="9"/>
+</svg>
