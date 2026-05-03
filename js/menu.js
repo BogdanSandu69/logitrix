@@ -176,7 +176,7 @@ function renderMenu() {
       btn.className = `diff-btn diff-${meta.color}${isLocked ? ' diff-locked' : ''}`;
       btn.dataset.difficulty = diff;
       btn.innerHTML = `
-        ${isLocked ? '<span class="lock-badge">🔒 $2</span>' : ''}
+        ${isLocked ? '<span class="lock-badge">🔒 $5</span>' : ''}
         <span class="diff-name">${meta.label}</span>
         <span class="diff-grid">${meta.grid} &bull; ${meta.letters}</span>
         <span class="diff-record">${isLocked ? 'Premium Only' : recText}</span>
