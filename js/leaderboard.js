@@ -10,6 +10,19 @@ let lbUnsubscribe     = null; // Firestore real-time listener teardown function
 
 // ── Formatting ───────────────────────────────────────────────────────────────
 
+/**
+ * Mask a display name for privacy.
+ * Keeps the first 2 characters of each word and replaces the rest with ***.
+ * e.g. "Bogdan Sandu" → "Bo*** Sa***"
+ */
+function maskDisplayName(name) {
+  if (!name || typeof name !== 'string') return name;
+  return name
+    .split(' ')
+    .map(word => (word.length <= 2 ? word : word.slice(0, 2) + '***'))
+    .join(' ');
+}
+
 function lbFormatTime(secs) {
   if (secs == null) return '--:--';
   const m = String(Math.floor(secs / 60)).padStart(2, '0');
@@ -111,7 +124,7 @@ function renderLeaderboardEntries(entries, difficulty) {
       <div class="${rowClass}" data-userid="${escapeHtml(entry.userId)}">
         <span class="lb-rank ${rankClass}">${rankBadge}</span>
         ${avatarHtml}
-        <span class="lb-name">${escapeHtml(entry.displayName || 'Anonymous')}${isMe ? ' <span class="lb-you-badge">YOU</span>' : ''}</span>
+        <span class="lb-name">${escapeHtml(isMe ? (entry.displayName || 'Anonymous') : maskDisplayName(entry.displayName || 'Anonymous'))}${isMe ? ' <span class="lb-you-badge">YOU</span>' : ''}</span>
         <span class="lb-time" style="color:${color}">${lbFormatTime(entry.time)}</span>
       </div>`);
   });
