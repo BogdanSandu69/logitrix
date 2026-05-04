@@ -104,7 +104,7 @@ function _startGridDrag(e, r, c) {
   if (!grid[r][c]) return;                      // only drag occupied cells
   if (hintCells[r] && hintCells[r][c]) return;  // hint-locked cells are immovable
   const cell = e.currentTarget;
-  cell.releasePointerCapture(e.pointerId);
+  cell.setPointerCapture(e.pointerId);
   _gridDrag = {
     srcR: r, srcC: c,
     cell,
@@ -203,6 +203,7 @@ let _drag = null;  // active drag state
 function _startDrag(e) {
   if (e.pointerType === 'mouse' && e.button !== 0) return;
   const btn = e.currentTarget;
+  btn.setPointerCapture(e.pointerId);
   _drag = {
     srcIdx:  parseInt(btn.dataset.index),
     btn,
